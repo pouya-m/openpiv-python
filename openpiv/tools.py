@@ -60,9 +60,8 @@ def display_vector_field(filename, on_img=False, image_name='None',
     widim : bool, optional, default is False
         when widim == True, the y values are flipped, i.e. y = y.max() - y
 
-    negative_img : bool, optional, default if True
-        when True, the negative of the image is showed in the background for 
-        more readability
+    negative_img : bool, optional, default is True
+        when True, the negative of the image is showed in the background for better readability
         
     Key arguments   : (additional parameters, optional)
         *scale*: [None | float]
@@ -112,8 +111,8 @@ def display_vector_field(filename, on_img=False, image_name='None',
         a[:, 1] = a[:, 1].max() - a[:, 1]
         
     invalid = a[:, 4].astype('bool')  # mask
-    # fig.canvas.set_window_title('Vector field, 
-    #       '+str(np.count_nonzero(invalid))+' wrong vectors')
+    # (Pouya) Let's show the number of bad vectors on the window title
+    fig.canvas.set_window_title(f'Vector field, {np.count_nonzero(invalid)} bad vectors')
     valid = ~invalid
     ax.quiver(a[invalid, 0], a[invalid, 1], a[invalid, 2], a[invalid, 3],
               color='r', **kw)

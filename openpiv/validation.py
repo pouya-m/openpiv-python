@@ -125,7 +125,7 @@ def global_std( u, v, std_threshold = 3 ):
 def sig2noise_val( u, v, sig2noise, threshold = 1.3):
     """Eliminate spurious vectors from cross-correlation signal to noise ratio.
     
-    Replace spurious vectors with zero if signal to noise ratio
+    Replace spurious vectors with NaN if signal to noise ratio
     is below a specified threshold.
     
     Parameters

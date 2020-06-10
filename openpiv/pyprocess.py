@@ -543,8 +543,10 @@ def extended_search_area_piv(
         # range(range(search_area_size/2, frame_a.shape[0] - search_area_size/2, window_size - overlap ):
         for m in range(n_cols):
             # range(search_area_size/2, frame_a.shape[1] - search_area_size/2 , window_size - overlap ):
-            
-            
+
+            '''
+            (Pouya) this part of the code is completely changed since the implementation of the 
+            extended search area was coded incorrectly
             # Select first the largest window, work like usual from the top left corner
             # the left edge goes as: 
             # e.g. 0, (search_area_size - overlap), 2*(search_area_size - overlap),....
@@ -568,20 +570,37 @@ def extended_search_area_piv(
             jb =  jt + window_size
 
             window_a = frame_a[il:ir, jt:jb]
+            '''
+            #(pouya) First the smaller window (window_a) is selected
+            top = k*(window_size - overlap)
+            left = m*(window_size - overlap)
+            window_a = frame_a[top : top + window_size, left : left + window_size]
+
+            # (Pouya) Now the larger search area (window_b) is selected
+            # we need to pad around frame_b with zeros to fill the corners/edges so that the larger search area is available
+            # this padding also has the effect of moving the effective top and left edges of each window_b to the top and
+            # left respectively. so the old top and left values for frame_a can be reused without change here as the new top 
+            # and left values for frame_b.
+            pad = (search_area_size - window_size) // 2
+            frame_b_padded = np.pad(frame_b, (pad,), mode='constant', constant_values=0)
+            window_b = frame_b_padded[top : top+search_area_size, left : left+search_area_size]
 
             if np.any(window_a):
                 corr = correlate_windows(window_a, window_b,
                                          corr_method=corr_method, 
                                          nfftx=nfftx, nffty=nffty)
-#                 plt.figure()
-#                 plt.contourf(corr)
-#                 plt.show()
+                #plt.figure()
+                #plt.contourf(corr)
+                #plt.show()
                 # get subpixel approximation for peak position row and column index
                 row, col = find_subpixel_peak_position(corr, 
                                                         subpixel_method=subpixel_method)
-                                
-                row -= (search_area_size + window_size - 1)//2
-                col -= (search_area_size + window_size - 1)//2
+                
+                #(Pouya) changed for better accuracy in case odd values for search_area or window_size are entered
+                #row -= (search_area_size + window_size - 1)//2
+                #col -= (search_area_size + window_size - 1)//2
+                row -= (search_area_size + window_size)//2 - 1
+                col -= (search_area_size + window_size)//2 - 1
     
                 # get displacements, apply coordinate system definition
                 u[k,m],v[k,m] = -col, row 
