@@ -33,7 +33,7 @@ from imageio import imread as _imread, imsave as _imsave
 
 def display_vector_field(filename, on_img=False, image_name='None', 
                          window_size=32, scaling_factor=1, widim=False, 
-                         ax=None, **kw):
+                         negative_img=True, ax=None, **kw):
     """ Displays quiver plot of the data stored in the file 
     
     
@@ -59,6 +59,10 @@ def display_vector_field(filename, on_img=False, image_name='None',
     
     widim : bool, optional, default is False
         when widim == True, the y values are flipped, i.e. y = y.max() - y
+
+    negative_img : bool, optional, default if True
+        when True, the negative of the image is showed in the background for 
+        more readability
         
     Key arguments   : (additional parameters, optional)
         *scale*: [None | float]
@@ -83,8 +87,8 @@ def display_vector_field(filename, on_img=False, image_name='None',
                                           scale=100, width=0.0025)
     
     """
-    
-    a = np.loadtxt(filename)
+    #(Pouya) header line is skipped
+    a = np.loadtxt(filename, skiprows=1)
     if ax is None:
         fig, ax = plt.subplots()
     else:
@@ -92,7 +96,10 @@ def display_vector_field(filename, on_img=False, image_name='None',
 
     if on_img is True:  # plot a background image
         im = imread(image_name)
-        im = negative(im)  # plot negative of the image for more clarity
+        #im = negative(im)  # plot negative of the image for more clarity
+        # (Pouya) lets provide the option to use original image
+        if negative_img is True:
+            im = negative(im)
         # imsave('neg.tif', im)
         # im = imread('neg.tif')
         xmax = np.amax(a[:, 0])+window_size/(2*scaling_factor)
@@ -113,7 +120,8 @@ def display_vector_field(filename, on_img=False, image_name='None',
     ax.quiver(a[valid, 0], a[valid, 1], a[valid, 2], a[valid, 3], color='b',
               **kw)
 #     if on_img is False:
-    ax.invert_yaxis()
+    #ax.invert_yaxis()
+    # (Pouya) y axis inversion is done in the pyprocess module no need to do it here
 
     plt.show()
 
@@ -340,11 +348,14 @@ def save( x, y, u, v, mask, filename, fmt='%8.4f', delimiter='\t' ):
     >>> openpiv.tools.save( x, y, u, v, 'field_001.txt', fmt='%6.3f', delimiter='\t')
     
     """
+    
     # build output array
     out = np.vstack( [m.ravel() for m in [x, y, u, v, mask] ] )
             
     # save data to file.
-    np.savetxt( filename, out.T, fmt=fmt, delimiter=delimiter )
+    #(Pouya) added a header line for direct import to Tecplot
+    headerline=f'VARIABLES = "x", "y", "U", "V", "S2N", ZONE I={x.shape[1]}, J={x.shape[0]}'
+    np.savetxt( filename, out.T, fmt=fmt, delimiter=delimiter, header=headerline, comments='' )
 
 def display( message ):
     """Display a message to standard output.

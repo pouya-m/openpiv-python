@@ -1,0 +1,28 @@
+pyprocess:
+	1- when (search_area > window_size) there is a problem calculating the correlation because window_a and
+		window_b arrangement is not implemented correctly (we go beyond the image bounds in the i,j loops).
+		
+
+pyprocess.get_coordinates:
+	if the goal is to make the output of the program compatible with other programs(i.e. tecplot), then the
+		standard for grid progression is to start from (xmin,ymax) and increase the x while keeping y value 
+		constant and then move ahead with the next (lower) y value until we get to the end (xmax,ymin).
+	
+	- change the y values order to match this convention. ->Done.
+	
+	
+tools.save:
+	- add a header to saved data to specify the variables, grid size, zone type, ... this will make the output
+		directly readable with tecplot. -> Done.
+	
+	
+tools.display_vector_filed:
+	- change the tools.display_vector_filed to ignore the new header and also 
+		work with the new data order (y values). -> Done.
+		
+		
+tools.display_windows_sampling:
+	- don't know what it's trying to do exactly but it gets too crowded to be usefull. It should draw a simple
+		grid to show the interogation windows.
+		we should also have the original image in the background so that we can see the particle
+		density in each cell.

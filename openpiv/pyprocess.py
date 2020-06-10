@@ -64,7 +64,9 @@ def get_coordinates(image_size, window_size, overlap):
     # compute grid coordinates of the interrogation window centers
     # compute grid coordinates of the interrogation window centers
     x = np.arange( field_shape[1] )*(window_size-overlap) + window_size/2.0
-    y = np.arange( field_shape[0] )*(window_size-overlap) + window_size/2.0
+    #y = np.arange( field_shape[0] )*(window_size-overlap) + window_size/2.0
+    #(Pouya) y values should start from ymax and go down to ymin
+    y = np.arange(field_shape[0]-1,-1,-1)*(window_size-overlap) + window_size/2.0
 
     return np.meshgrid(x, y)
 
