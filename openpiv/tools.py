@@ -112,7 +112,7 @@ def display_vector_field(filename, on_img=False, image_name='None',
         
     invalid = a[:, 4].astype('bool')  # mask
     # (Pouya) Let's show the number of bad vectors on the window title
-    fig.canvas.set_window_title(f'Vector field, {np.count_nonzero(invalid)} bad vectors')
+    fig.canvas.set_window_title(f'Velocity field, {np.count_nonzero(invalid)} bad vectors out of {np.size(invalid)}')
     valid = ~invalid
     ax.quiver(a[invalid, 0], a[invalid, 1], a[invalid, 2], a[invalid, 3],
               color='r', **kw)

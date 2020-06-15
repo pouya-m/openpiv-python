@@ -539,6 +539,10 @@ def extended_search_area_piv(
     # loop over the interrogation windows
     # i, j are the row, column indices of the center of each interrogation
     # window
+    #(Pouya) Let's do some padding on frame_b we will use it later...
+    pad = (search_area_size - window_size) // 2
+    frame_b_padded = np.pad(frame_b, (pad,), mode='constant', constant_values=0)
+    
     for k in range(n_rows):
         # range(range(search_area_size/2, frame_a.shape[0] - search_area_size/2, window_size - overlap ):
         for m in range(n_cols):
@@ -580,9 +584,7 @@ def extended_search_area_piv(
             # we need to pad around frame_b with zeros to fill the corners/edges so that the larger search area is available
             # this padding also has the effect of moving the effective top and left edges of each window_b to the top and
             # left respectively. so the old top and left values for frame_a can be reused without change here as the new top 
-            # and left values for frame_b.
-            pad = (search_area_size - window_size) // 2
-            frame_b_padded = np.pad(frame_b, (pad,), mode='constant', constant_values=0)
+            # and left values for frame_b. and we already padded frame_b outside the loop so:
             window_b = frame_b_padded[top : top+search_area_size, left : left+search_area_size]
 
             if np.any(window_a):

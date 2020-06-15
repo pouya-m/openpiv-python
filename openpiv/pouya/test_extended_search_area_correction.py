@@ -11,9 +11,9 @@ frame_b  = tools.imread( os.path.join(path,'./00020361.bmp'))
 frame_a = (frame_a*1024).astype(np.int32)
 frame_b = (frame_b*1024).astype(np.int32)
 
-ws=16
-ol=4
-sa=24
+ws=24
+ol=12
+sa=36
 
 
 u, v, sig2noise = pyprocess.extended_search_area_piv( frame_a, frame_b, window_size=ws, corr_method='fft', \
