@@ -5,6 +5,9 @@ import warnings
 import os
 import glob
 
+# To do:
+# refract the code (there is lots of repetition...)
+# add the ensemble averaging capability
 
 def point_fft(file_list, gx, gy, fs=1, dim_ratio=1):
     """ Calculates FFT for a single point in the flow from list of files,
@@ -74,15 +77,6 @@ def point_fft(file_list, gx, gy, fs=1, dim_ratio=1):
     np.savetxt(os.path.join(save_dir, f'V_fft_Point ({gx},{gy}).txt'), out_v.T, fmt='%8.4f', delimiter='\t', header=headerline, comments='')
     
     return Fr, Su, Sv
-
-
-#code to test point_fft:
-path = os.path.dirname(os.path.abspath(__file__))
-file_list = glob.glob(path+'\Dummy Data\dp*.txt')
-file_list.sort()
-point_fft(file_list, 64, 16, fs=10, dim_ratio=1)
-
-
 
 def point_stft(file_list, gx, gy, nperseg, noverlap, fs=1, dim_ratio=1):
     """ Calculates Short-Time Fourier Transform for a single point in the flow
@@ -168,15 +162,6 @@ def point_stft(file_list, gx, gy, nperseg, noverlap, fs=1, dim_ratio=1):
     np.savetxt(os.path.join(save_dir, f'V_short_time_fft_Point ({gx},{gy}).txt'), out_v.T, fmt='%8.4f', delimiter='\t', header=headerline, comments='')
     
     return t, f, Su, Sv
-
-
-#code to test point_stft
-path = os.path.dirname(os.path.abspath(__file__))
-file_list = glob.glob(path+'\Dummy Data\dp*.txt')
-file_list.sort()
-point_stft(file_list, 64, 16, 16, 10, fs=10)
-
-
 
 def global_spectra(file_list, nx, nfreq, fs=1, dim_ratio=1):
     """ Calculates the global Autospectral density (GAS) for u and v from list of files,
@@ -284,12 +269,13 @@ def global_spectra(file_list, nx, nfreq, fs=1, dim_ratio=1):
     
     return Su_max, Su_map, Sv_max, Sv_map, Fr
 
-
-#code to test GAS
+'''
+#code to test functions:
 path = os.path.dirname(os.path.abspath(__file__))
 file_list = glob.glob(path+'\Dummy Data\dp*.txt')
 file_list.sort()
-nfreq = 16
-fs = 10
-nx = 52
-Su_max, Su_map, Sv_max, Sv_map, Fr = global_spectra (file_list, nx, nfreq, fs)
+
+point_fft(file_list, gx=64, gy=16, fs=10)
+point_stft(file_list, 6gx=4, gy=16, nperseg=16, noverlap=10, fs=10)
+Su_max, Su_map, Sv_max, Sv_map, Fr = global_spectra (file_list, nx=52, nfreq=16, fs=10)
+'''

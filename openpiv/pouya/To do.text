@@ -1,7 +1,7 @@
 pyprocess:
 	1- when (search_area > window_size) there is a problem calculating the correlation because window_a 
 	and window_b arrangement is not implemented correctly (we go beyond the image bounds in the i,j loops).
-	-> Done.
+	-> Corrected.
 
 pyprocess.get_coordinates:
 	if the goal is to make the output of the program compatible with other programs(i.e. Tecplot), then
@@ -33,33 +33,42 @@ tools.display_windows_sampling:
 	- don't know what it's trying to do exactly but it gets too crowded to be usefull. It should draw a 
 	simple grid to show the interogation windows. we should also have the original image in the background
 	so that we can see the particle density in each cell.
-		
-		
-validation:
-	in this module there should be a tool to detect bad vectores simply by comparing them with the 
-	neiboring vectors and if they differ by a large amount, then they should be added to the bad vectors
-	mask. -> this is already implemented in the code with validation.local_median_val
 	
 	
 Spectra:
 	New module for postprocessing:
-	- pointFFT: function to derive Fourier transform results of u and v velocity at a specific point in
-	the flow. -> Done. needs final validation.
+	- point_fft: function to derive Fourier transform results of u and v velocity at a specific point in
+	the flow. -> Done. needs final validation and refactoring.
 
-	- pointSTFT: function to derive short-time Fourier transform of u and v velocity at a specific point
-	in the flow. -> Done. needs final validation.
+	- point_stft: function to derive short-time Fourier transform of u and v velocity at a specific point
+	in the flow. -> Done. needs final validation and refactoring.
 	
-	- GAS: function to derive Global Autospectral Density(all points in the flow at defferent frequencies).
-		-> Done. needs final validation.
+	- global_spectra: function to derive Global Autospectral Density(all points in the flow at defferent frequencies).
+		-> Done. needs final validation and refactoring.
+	
+		- add the compatibleto identify and return the point where the maximum GAS occures so that, the point
+		can be further analyzed by pointFFT and pointSTFT functions.
+
+		- add the code to also calculate and save the mean velocity flow field.
 	
 	
-tools.rotate:
-	New function
-	- add a tool to flip and rotate the flow field.
+tools:
+	- New function rotate: a tool to flip and rotate the flow field.
+	
+	- New function vorticity: a tool to calculate the vorticity field. it's simple to calculate the vorticity
+	in Tecplot, but calculating it in Python should be available in case we need to process the vorticity data...
+
+	- New function to handle the construction of file paths to be analyzed by different parts of the program.
+	ideally it should be compatible by the file system used by insight4G.
+	
 	
 POD:
 	New module for post processing:
-	- develop some tools to do the Proper Orthogonal Decomposition
+	- modal_svd: function to conduct modal analysis using Singular Value Decomposition method. saving the modes
+	and their coresponding coefficients. -> Done and validated, may need further refactoring.
 
-	
+	- modal_snapshot: function to conduct modal analysis using snapshots method. saving the modes and their
+	coresponding coefficients -> Done and validated, may need further refactoring.
+
+	- reconstruct_field: function to reconstruct the flow fields using certain number of modes. -> Done.
 	
