@@ -402,7 +402,6 @@ class Multiprocesser():
     
         """
         # load lists of images
-         
         self.files_a = sorted( glob.glob( os.path.join( os.path.abspath(data_dir), pattern_a ) ) )
         
         if pattern_b is None:
@@ -437,16 +436,17 @@ class Multiprocesser():
         """
 
         # create a list of tasks to be executed.
-        image_pairs = [ (file_a, file_b, i) for file_a, file_b, i in zip( self.files_a, self.files_b, range(self.n_files) ) ]
+        image_pairs = [ (file_a, file_b, i ) for file_a, file_b, i in zip( self.files_a, self.files_b, range(self.n_files) ) ]
         
         # for debugging purposes always use n_cpus = 1,
         # since it is difficult to debug multiprocessing stuff.
         if n_cpus > 1:
             pool = multiprocessing.Pool( processes = n_cpus )
-            res = pool.map( func, image_pairs )
+            res = pool.map( func, image_pairs)
         else:
             for image_pair in image_pairs:
                 func( image_pair )
+        return res
                 
 
 def negative( image):
@@ -532,4 +532,70 @@ def display_windows_sampling( x, y, window_size, skip=0,  method='standard'):
             raise ValueError('method not valid: choose between standard and random')
     plt.draw()
     plt.show()
-   
+
+# (Pouya) added all the functions from this line down
+#--------------------------------------------------------------
+
+def read_data(filename):
+    """function to read the saved data file and reconstruct the field data
+    
+    Parameters
+    ----------
+    filename :  string, path to the file
+
+    Returns
+    --------
+    x, y, u, v, mask : numpy arrays containing the position and field data
+    """
+    a = np.loadtxt(filename, skiprows=1)
+    nx = int((a[-1,0]-a[0,0])/(a[1,0]-a[0,0]) + 1)
+    ny = a.shape[0]//nx 
+    m = np.zeros((ny, nx, 5))
+    for j in range(5):
+        for i in range(ny):
+            m[i,:,j] = a[i*nx:(i+1)*nx,j].T
+    
+    return m[:,:,0], m[:,:,1], m[:,:,2], m[:,:,3], m[:,:,4]
+
+
+def manipulate_field ( x, y, u, v, mask, mode ):
+    """tool to flip/rotate flow field according to the mode parameter:
+        'flipLR', 'flipUD', 'rotateCW', 'rotateCCW'
+    """
+    if mode == 'flipUD':
+        v = -v
+        y = np.flipud(y)
+    elif mode == 'flipLR':
+        u = -u
+        x = np.fliplr(x)
+    elif mode == 'rotateCW':
+        u, v = v.T, -u.T
+        x, y = y.T, np.flipud(x.T)
+        mask = mask.T
+    elif mode == 'rotateCCW':
+        u, v = -v.T, u.T
+        x, y = np.fliplr(y.T), x.T
+        mask = mask.T
+    else:
+        raise ValueError('mode value not recognized, choose from available modes: flipLR, flipUD, rotateCW, rotateCCW')
+
+    return x, y, u, v, mask
+
+
+def create_path(file_name, folder='Analysis'):
+    """creates the file path to the given run counter"""
+
+    name = os.path.basename(file_name)
+    name, *_ = name.split('.')
+    directory = os.path.dirname(os.path.dirname(file_name))
+    file_path = os.path.join(directory, f'{folder}/{name}')
+    return file_path
+
+
+def create_directory(directory ,folder='Analysis'):
+    """creates the required directories and returns its' path"""
+
+    Folder_path = os.path.join(directory, folder)
+    if os.path.isdir(Folder_path)==False:
+        os.mkdir(Folder_path)
+    return Folder_path

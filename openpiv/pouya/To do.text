@@ -1,33 +1,12 @@
-pyprocess:
-	1- when (search_area > window_size) there is a problem calculating the correlation because window_a 
-	and window_b arrangement is not implemented correctly (we go beyond the image bounds in the i,j loops).
-	-> Corrected.
+To do:
+----------
 
-pyprocess.get_coordinates:
-	if the goal is to make the output of the program compatible with other programs(i.e. Tecplot), then
-	the standard for grid progression is to start from (xmin,ymax) and increase the x while keeping y 
-	value constant and then move ahead with the next (lower) y value until we get to the end (xmax,ymin).
-	
-	- change the y values order to match this convention. ->Done.
-	
-	- fft optimization:
+- fft optimization:
 	using pyfftw code may result in 3x faster speeds in fft calculation. However these speeds are reported
 	for ffts for large arrays (minimum:1024*1024) not repeated ffts of small arrays (64*64) like the ones 
 	that we have. Therefore this should be tested and timed.
 	good refference at: https://hgomersall.github.io/pyFFTW/pyfftw/pyfftw.html#pyfftw.FFTW
 	
-	
-tools.save:
-	- add a header to saved data to specify the variables, grid size, zone type, ... this will make the
-	output directly readable with tecplot. -> Done.
-	
-	
-tools.display_vector_filed:
-	- change the tools.display_vector_filed to ignore the new header and also work with the new data order
-	(y values). -> Done.
-		
-	- show the number of bad vectors in the data when displaying the vector field. -> Done.
-		
 		
 tools.display_windows_sampling:
 	- don't know what it's trying to do exactly but it gets too crowded to be usefull. It should draw a 
@@ -50,18 +29,41 @@ Spectra:
 		can be further analyzed by pointFFT and pointSTFT functions.
 
 		- add the code to also calculate and save the mean velocity flow field.
+
+- GUI for validation process. -> I wrote the script to help perform the validation fairly straight forward, but it requires
+	multiple runs and we have to open Tecplot and look at the results between each iteration. -> a GUI would be sweet!
 	
 	
 tools:
-	- New function rotate: a tool to flip and rotate the flow field.
 	
-	- New function vorticity: a tool to calculate the vorticity field. it's simple to calculate the vorticity
-	in Tecplot, but calculating it in Python should be available in case we need to process the vorticity data...
+	- New function to calculate the vorticity field. it's "simple and accurate" to calculate the vorticity
+	in Tecplot, but calculating it in Python should be available in case we need to process the vorticity data.
 
 	- New function to handle the construction of file paths to be analyzed by different parts of the program.
-	ideally it should be compatible by the file system used by insight4G.
+	It should be compatible by the file system used by insight4G. --> Partially Done. (in the ValidationProcess.py)
+
 	
-	
+
+Finished:
+-----------
+pyprocess:
+	- when (search_area > window_size) there is a problem calculating the correlation because window_a 
+	and window_b arrangement is not implemented correctly (we go beyond the image bounds in the i,j loops).
+	-> Corrected.
+
+pyprocess.get_coordinates:
+	- change the y values order to match this convention used in tecplot. ->Done.
+
+	- add a header to saved data to specify the variables, grid size, zone type, ... this will make the
+	output directly readable with tecplot. -> Done.
+
+	- New tool to read the already processed data and recreate the field variables (x, y, u, v, mask) -> Done.
+
+	- change the tools.display_vector_filed to ignore the new header and also work with the new data order
+	(y values). -> Done.
+		
+	- show the number of bad vectors in the data when displaying the vector field. -> Done.
+
 POD:
 	New module for post processing:
 	- modal_svd: function to conduct modal analysis using Singular Value Decomposition method. saving the modes
@@ -71,4 +73,7 @@ POD:
 	coresponding coefficients -> Done and validated, may need further refactoring.
 
 	- reconstruct_field: function to reconstruct the flow fields using certain number of modes. -> Done.
-	
+
+- New function manipulate_field: a tool to flip and rotate the flow field. -> Added to tools. Done.
+
+	- New function read_data: a function to read the previously analyzed data -> Added to tools. Done.
