@@ -447,6 +447,26 @@ class Multiprocesser():
             for image_pair in image_pairs:
                 func( image_pair )
         return res
+        
+    # (Pouya) Added this module to calculate background image efficiently
+    def find_background( self, n_files, chunk_size, n_cpus):
+        """Finds the background of a and b set of images utilizing
+        multiprocessing."""
+
+        print('finding background image...')
+        file_a = [self.files_a[i:i+chunk_size] for i in range(0,n_files,chunk_size)]
+        file_b = [self.files_b[i:i+chunk_size] for i in range(0,n_files,chunk_size)]
+        pool = multiprocessing.Pool( processes = n_cpus )
+        res = pool.map( find_bg, file_a)
+        background_a = find_bg(list_img=res)
+        print('- done finding background for image set A')
+        res = pool.map( find_bg, file_b)
+        background_b = find_bg(list_img=res)
+        print('- done finding background for image set B')
+        #print(f'number of sets: {len(res)}')
+        #print(f'n of images in the last set: {len(file_b[-1])}')
+
+        return background_a, background_b
                 
 
 def negative( image):
@@ -599,3 +619,22 @@ def create_directory(directory ,folder='Analysis'):
     if os.path.isdir(Folder_path)==False:
         os.mkdir(Folder_path)
     return Folder_path
+
+def find_bg(list_file=None, list_img=None):
+    """finds the background for image list or file list, similar to mark_background2 function but
+    with minor differences in handling the images and image intensities"""
+    
+    if list_img == None:
+        list_img = []
+        for I in range(len(list_file)):
+            list_img.append(_imread(list_file[I]))
+    
+    background = np.zeros(list_img[0].shape, dtype=np.int32)
+    for I in range(background.shape[0]):
+        for J in range(background.shape[1]):
+            min_1 = list_img[0][I,J]
+            for K in range(len(list_img)):
+                if min_1 > list_img[K][I,J]:
+                    min_1 = list_img[K][I,J]
+            background[I,J]=min_1
+    return background

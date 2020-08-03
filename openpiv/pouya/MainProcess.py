@@ -1,25 +1,27 @@
 # this script facilitates the Main Processing phase of our PIV data analysis
-# basically the same thing will be done as the validation phase but this time 
-# we will do it for the whole data set and also bad vector replacement, smoothing 
-# ,scalling and field manipulation will be done. 
+# basically this includes piv process, detection and replacement of bad vectors, 
+# smoothing ,scalling and field manipulations. 
 
 from openpiv import tools, pyprocess, validation, filters, smoothn, scaling
-import os, glob
+import os, glob, time
 import numpy as np
 from functools import partial
-import time
+from imageio import imread, imsave
+import warnings
+warnings.filterwarnings("ignore")
 
-def main_process( args, run_name ):
+
+def ProcessPIV( args, bg_a, bg_b):
     """The function to process the image pairs."""
 
     #unpacking the arguments
     file_a, file_b, counter = args
     
     # read images into numpy arrays
-    frame_a  = tools.imread( file_a )
-    frame_b  = tools.imread( file_b )
+    frame_a  = imread( file_a ) - bg_a
+    frame_b  = imread( file_b ) - bg_b
     print(counter+1)
-
+    
     # process image pair with piv algorithm.
     u, v, sig2noise = pyprocess.extended_search_area_piv( frame_a, frame_b, \
         window_size=32, overlap=16, dt=0.0015, search_area_size=32, sig2noise_method='peak2peak')
@@ -35,27 +37,32 @@ def main_process( args, run_name ):
     u, *_ = smoothn.smoothn(u, s=0.5)
     v, *_ = smoothn.smoothn(v, s=0.5)
     x, y, u, v = scaling.uniform(x, y, u, v, scaling_factor = 7.4 )
-    x, y, u, v, mask = tools.manipulate_field(x, y, u, v, mask, mode='rotateCW')
-    x, y, u, v, mask = tools.manipulate_field(x, y, u, v, mask, mode='flipUD')
-    save_file = tools.create_path(file_a, run_name, counter)
-    tools.save(x, y, u, v, mask, save_file+'.dat')
-
+    x, y, u, v, sig2noise = tools.manipulate_field(x, y, u, v, sig2noise, mode='rotateCW')
+    #x, y, u, v, sig2noise = tools.manipulate_field(x, y, u, v, sig2noise, mode='flipUD')
+    save_file = tools.create_path(file_a)
+    tools.save(x, y, u, v, sig2noise, save_file+'.dat')
 
 
 if __name__ == '__main__':
     directory = 'F:\Pouya'
-    experiments = ['OpenPIV_Test1_CleanCylinder']
-    runs = ['Fixed', 'Free Vibration']
+    experiments = ['Insight_vs_OpenPIV']
+    runs = ['free vibration']
     t1 = time.time()
     for experiment in experiments:
         for run in runs:
-            path = tools.create_directory(directory, experiment, run) #creates the Analysis folder if not already there
-            print(f'Processing experiment: {path}')
+            run_path = os.path.join(os.path.join(directory, experiment), run)
+            analysis_path = tools.create_directory(run_path) #creates the Analysis folder if not already there
+            print(f'Processing run: {experiment} / {run}')
+            data_dir = os.path.join(run_path, 'RawData')
+            task = tools.Multiprocesser( data_dir=data_dir, pattern_a='*LA.TIF', pattern_b='*LB.TIF' )
+            background_a, background_b = task.find_background(n_files=200, chunk_size=20, n_cpus=6)
+            imsave(os.path.join(analysis_path, 'background_a.TIF'), background_a)
+            imsave(os.path.join(analysis_path, 'background_b.TIF'), background_b)
+            #background_a = imread(os.path.join(analysis_path, 'background_a.TIF'))
+            #background_b = imread(os.path.join(analysis_path, 'background_b.TIF'))
+            task.n_files = 10
+            Process = partial(ProcessPIV, bg_a=background_a, bg_b=background_b)
+            task.run( func = Process, n_cpus=6 )
 
-            task = tools.Multiprocesser( data_dir=path, pattern_a='*LA.TIF', pattern_b='*LB.TIF' )
-            #task.n_files = 100
-            run_func = partial(main_process, run_name=run)
-            task.run( func = run_func, n_cpus=8 )
     t2 = time.time()
     print(f'process finished in: {(t2-t1):.2f}sec')
-
