@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>904</width>
+    <width>876</width>
     <height>720</height>
    </rect>
   </property>
@@ -64,7 +64,7 @@
        <enum>QTabWidget::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>1</number>
       </property>
       <property name="elideMode">
        <enum>Qt::ElideNone</enum>
@@ -698,7 +698,10 @@
            <property name="bottomMargin">
             <number>10</number>
            </property>
-           <item row="1" column="0">
+           <property name="horizontalSpacing">
+            <number>6</number>
+           </property>
+           <item row="2" column="0">
             <spacer name="horizontalSpacer">
              <property name="orientation">
               <enum>Qt::Horizontal</enum>
@@ -711,14 +714,7 @@
              </property>
             </spacer>
            </item>
-           <item row="1" column="2">
-            <widget class="QPushButton" name="process_savesettings_PB">
-             <property name="text">
-              <string>Save Settings</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
+           <item row="2" column="1">
             <widget class="QPushButton" name="process_loadsettings_PB">
              <property name="text">
               <string>Load Settings</string>
@@ -746,7 +742,7 @@
               <enum>QFrame::Raised</enum>
              </property>
              <property name="currentIndex">
-              <number>0</number>
+              <number>3</number>
              </property>
              <property name="tabSpacing">
               <number>4</number>
@@ -756,8 +752,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>866</width>
-                <height>224</height>
+                <width>838</width>
+                <height>302</height>
                </rect>
               </property>
               <attribute name="label">
@@ -784,6 +780,64 @@
                  <property name="verticalSpacing">
                   <number>8</number>
                  </property>
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="label_24">
+                   <property name="text">
+                    <string>Directory</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="6">
+                  <widget class="QToolButton" name="exp_directory_TB">
+                   <property name="text">
+                    <string>...</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="1" colspan="6">
+                  <widget class="QLineEdit" name="exp_experiments_LE">
+                   <property name="text">
+                    <string/>
+                   </property>
+                   <property name="placeholderText">
+                    <string>Experiments separated by a comma (,)</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="0">
+                  <widget class="QLabel" name="label_14">
+                   <property name="text">
+                    <string>Runs</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="1" colspan="6">
+                  <widget class="QLineEdit" name="exp_runs_LE">
+                   <property name="text">
+                    <string/>
+                   </property>
+                   <property name="placeholderText">
+                    <string>Runs separated by a comma (,)</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="0">
+                  <widget class="QLabel" name="label_25">
+                   <property name="text">
+                    <string>Experiments</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1" colspan="5">
+                  <widget class="QLineEdit" name="exp_directory_LE">
+                   <property name="text">
+                    <string/>
+                   </property>
+                   <property name="placeholderText">
+                    <string>Path to the experiment directory</string>
+                   </property>
+                  </widget>
+                 </item>
                  <item row="3" column="0">
                   <widget class="QLabel" name="label">
                    <property name="text">
@@ -798,13 +852,6 @@
                    </property>
                   </widget>
                  </item>
-                 <item row="3" column="3">
-                  <widget class="QLineEdit" name="exp_patB_LE">
-                   <property name="placeholderText">
-                    <string>Pattern for frame_b</string>
-                   </property>
-                  </widget>
-                 </item>
                  <item row="3" column="2">
                   <widget class="QLabel" name="label_2">
                    <property name="text">
@@ -812,75 +859,24 @@
                    </property>
                   </widget>
                  </item>
-                 <item row="3" column="5" colspan="2">
-                  <widget class="QLineEdit" name="exp_nfiles_LE">
-                   <property name="placeholderText">
-                    <string>Number of files in each run</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="1" column="0">
-                  <widget class="QLabel" name="label_25">
-                   <property name="text">
-                    <string>Experiments</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="2" column="1" colspan="6">
-                  <widget class="QLineEdit" name="exp_runs_LE">
-                   <property name="text">
-                    <string/>
-                   </property>
-                   <property name="placeholderText">
-                    <string>Runs separated by a comma (,)</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="2" column="0">
-                  <widget class="QLabel" name="label_14">
-                   <property name="text">
-                    <string>Runs</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="0" column="0">
-                  <widget class="QLabel" name="label_24">
-                   <property name="text">
-                    <string>Directory</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="0" column="1" colspan="5">
-                  <widget class="QLineEdit" name="exp_directory_LE">
-                   <property name="text">
-                    <string/>
-                   </property>
-                   <property name="placeholderText">
-                    <string>Path to the experiment directory</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="1" column="1" colspan="6">
-                  <widget class="QLineEdit" name="exp_experiments_LE">
-                   <property name="text">
-                    <string/>
-                   </property>
-                   <property name="placeholderText">
-                    <string>Experiments separated by a comma (,)</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="0" column="6">
-                  <widget class="QToolButton" name="exp_directory_TB">
-                   <property name="text">
-                    <string>...</string>
-                   </property>
-                  </widget>
-                 </item>
                  <item row="3" column="4">
                   <widget class="QLabel" name="label_3">
                    <property name="text">
                     <string>Num. of files</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="3" column="3">
+                  <widget class="QLineEdit" name="exp_patB_LE">
+                   <property name="placeholderText">
+                    <string>Pattern for frame_b</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="3" column="5" colspan="2">
+                  <widget class="QLineEdit" name="exp_nfiles_LE">
+                   <property name="placeholderText">
+                    <string>Number of files in each run</string>
                    </property>
                   </widget>
                  </item>
@@ -893,8 +889,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>866</width>
-                <height>224</height>
+                <width>815</width>
+                <height>302</height>
                </rect>
               </property>
               <attribute name="label">
@@ -921,31 +917,10 @@
                  <property name="verticalSpacing">
                   <number>8</number>
                  </property>
-                 <item row="1" column="1" colspan="3">
-                  <widget class="QLineEdit" name="pre_sm_path_LE">
-                   <property name="placeholderText">
-                    <string>Path to the mask image</string>
-                   </property>
-                  </widget>
-                 </item>
                  <item row="0" column="3" colspan="2">
                   <widget class="QLineEdit" name="pre_bg_ncpus_LE">
                    <property name="placeholderText">
                     <string>Number of CPUs</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="1" column="4">
-                  <widget class="QToolButton" name="pre_sm_path_TB">
-                   <property name="text">
-                    <string>...</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="0" column="1">
-                  <widget class="QLineEdit" name="pre_bg_nfiles_LE">
-                   <property name="placeholderText">
-                    <string>Number of files to consider</string>
                    </property>
                   </widget>
                  </item>
@@ -956,10 +931,31 @@
                    </property>
                   </widget>
                  </item>
+                 <item row="1" column="1" colspan="3">
+                  <widget class="QLineEdit" name="pre_sm_path_LE">
+                   <property name="placeholderText">
+                    <string>Path to the mask image</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QLineEdit" name="pre_bg_nfiles_LE">
+                   <property name="placeholderText">
+                    <string>Number of files to consider</string>
+                   </property>
+                  </widget>
+                 </item>
                  <item row="0" column="0">
                   <widget class="QCheckBox" name="pre_background_CB">
                    <property name="text">
                     <string>Remove Background</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="2">
+                  <widget class="QLineEdit" name="pre_bg_chunksize_LE">
+                   <property name="placeholderText">
+                    <string>Chunk size</string>
                    </property>
                   </widget>
                  </item>
@@ -970,10 +966,10 @@
                    </property>
                   </widget>
                  </item>
-                 <item row="0" column="2">
-                  <widget class="QLineEdit" name="pre_bg_chunksize_LE">
-                   <property name="placeholderText">
-                    <string>Chunk size</string>
+                 <item row="1" column="4">
+                  <widget class="QToolButton" name="pre_sm_path_TB">
+                   <property name="text">
+                    <string>...</string>
                    </property>
                   </widget>
                  </item>
@@ -986,8 +982,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>866</width>
-                <height>224</height>
+                <width>838</width>
+                <height>302</height>
                </rect>
               </property>
               <attribute name="label">
@@ -1014,42 +1010,18 @@
                  <property name="verticalSpacing">
                   <number>8</number>
                  </property>
-                 <item row="0" column="2">
-                  <widget class="QLineEdit" name="pro_windowsize_LE">
+                 <item row="1" column="6">
+                  <widget class="QLineEdit" name="pro_scale_LE">
                    <property name="text">
                     <string/>
                    </property>
                    <property name="placeholderText">
                     <string/>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="0" column="3">
-                  <widget class="QLabel" name="label_4">
-                   <property name="text">
-                    <string>Search Area Size</string>
                    </property>
                   </widget>
                  </item>
                  <item row="0" column="4">
                   <widget class="QLineEdit" name="pro_searcharea_LE">
-                   <property name="text">
-                    <string/>
-                   </property>
-                   <property name="placeholderText">
-                    <string/>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="0" column="5">
-                  <widget class="QLabel" name="label_7">
-                   <property name="text">
-                    <string>Overlap</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="0" column="6">
-                  <widget class="QLineEdit" name="pro_overlap_LE">
                    <property name="text">
                     <string/>
                    </property>
@@ -1065,30 +1037,17 @@
                    </property>
                   </widget>
                  </item>
-                 <item row="2" column="2">
-                  <widget class="QLineEdit" name="pro_ncpus_LE">
+                 <item row="0" column="5">
+                  <widget class="QLabel" name="label_7">
                    <property name="text">
-                    <string/>
-                   </property>
-                   <property name="placeholderText">
-                    <string/>
+                    <string>Overlap</string>
                    </property>
                   </widget>
                  </item>
-                 <item row="0" column="0" colspan="2">
-                  <widget class="QLabel" name="label_9">
+                 <item row="1" column="3">
+                  <widget class="QLabel" name="label_10">
                    <property name="text">
-                    <string>Window Size</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="1" column="6">
-                  <widget class="QLineEdit" name="pro_scale_LE">
-                   <property name="text">
-                    <string/>
-                   </property>
-                   <property name="placeholderText">
-                    <string/>
+                    <string>Time Step</string>
                    </property>
                   </widget>
                  </item>
@@ -1125,15 +1084,52 @@
                    </item>
                   </widget>
                  </item>
-                 <item row="1" column="3">
-                  <widget class="QLabel" name="label_10">
+                 <item row="1" column="4">
+                  <widget class="QLineEdit" name="pro_timestep_LE">
                    <property name="text">
-                    <string>Time Step</string>
+                    <string/>
+                   </property>
+                   <property name="placeholderText">
+                    <string/>
                    </property>
                   </widget>
                  </item>
-                 <item row="1" column="4">
-                  <widget class="QLineEdit" name="pro_timestep_LE">
+                 <item row="2" column="2">
+                  <widget class="QLineEdit" name="pro_ncpus_LE">
+                   <property name="text">
+                    <string/>
+                   </property>
+                   <property name="placeholderText">
+                    <string/>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="6">
+                  <widget class="QLineEdit" name="pro_overlap_LE">
+                   <property name="text">
+                    <string/>
+                   </property>
+                   <property name="placeholderText">
+                    <string/>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="3">
+                  <widget class="QLabel" name="label_4">
+                   <property name="text">
+                    <string>Search Area Size</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="0" colspan="2">
+                  <widget class="QLabel" name="label_9">
+                   <property name="text">
+                    <string>Window Size</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="2">
+                  <widget class="QLineEdit" name="pro_windowsize_LE">
                    <property name="text">
                     <string/>
                    </property>
@@ -1151,29 +1147,14 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>840</width>
-                <height>250</height>
+                <width>838</width>
+                <height>302</height>
                </rect>
               </property>
               <attribute name="label">
                <string>Post-Process</string>
               </attribute>
               <layout class="QGridLayout" name="gridLayout_10">
-               <property name="leftMargin">
-                <number>5</number>
-               </property>
-               <property name="topMargin">
-                <number>8</number>
-               </property>
-               <property name="rightMargin">
-                <number>5</number>
-               </property>
-               <property name="bottomMargin">
-                <number>5</number>
-               </property>
-               <property name="verticalSpacing">
-                <number>9</number>
-               </property>
                <item row="0" column="0">
                 <widget class="QGroupBox" name="groupBox_9">
                  <property name="title">
@@ -1194,13 +1175,10 @@
                   </property>
                   <item row="0" column="0">
                    <layout class="QGridLayout" name="gridLayout_22">
-                    <item row="0" column="0">
-                     <widget class="QCheckBox" name="pos_sig2noise_CB">
-                      <property name="enabled">
-                       <bool>true</bool>
-                      </property>
-                      <property name="text">
-                       <string>Signal 2 Noise</string>
+                    <item row="1" column="1">
+                     <widget class="QLineEdit" name="pos_std_LE">
+                      <property name="placeholderText">
+                       <string>std multiplier</string>
                       </property>
                      </widget>
                     </item>
@@ -1223,27 +1201,10 @@
                       </property>
                      </widget>
                     </item>
-                    <item row="0" column="2">
-                     <widget class="QCheckBox" name="pos_globalvelocity_CB">
-                      <property name="enabled">
-                       <bool>true</bool>
-                      </property>
-                      <property name="text">
-                       <string>Global Velocity</string>
-                      </property>
-                     </widget>
-                    </item>
                     <item row="0" column="3">
                      <widget class="QLineEdit" name="pos_gv_ulim_LE">
                       <property name="placeholderText">
                        <string>Umin, Umax</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="0" column="4">
-                     <widget class="QLineEdit" name="pos_gv_vlim_LE">
-                      <property name="placeholderText">
-                       <string>Vmin, Vmax</string>
                       </property>
                      </widget>
                     </item>
@@ -1254,13 +1215,6 @@
                       </property>
                       <property name="text">
                        <string>Global Std. Deviation</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="1" column="1">
-                     <widget class="QLineEdit" name="pos_std_LE">
-                      <property name="placeholderText">
-                       <string>std multiplier</string>
                       </property>
                      </widget>
                     </item>
@@ -1281,10 +1235,37 @@
                       </property>
                      </widget>
                     </item>
+                    <item row="0" column="0">
+                     <widget class="QCheckBox" name="pos_sig2noise_CB">
+                      <property name="enabled">
+                       <bool>true</bool>
+                      </property>
+                      <property name="text">
+                       <string>Signal 2 Noise</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="0" column="2">
+                     <widget class="QCheckBox" name="pos_globalvelocity_CB">
+                      <property name="enabled">
+                       <bool>true</bool>
+                      </property>
+                      <property name="text">
+                       <string>Global Velocity</string>
+                      </property>
+                     </widget>
+                    </item>
                     <item row="1" column="4">
                      <widget class="QLineEdit" name="pos_lv_kernel_LE">
                       <property name="placeholderText">
                        <string>kernel size</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="0" column="4">
+                     <widget class="QLineEdit" name="pos_gv_vlim_LE">
+                      <property name="placeholderText">
+                       <string>Vmin, Vmax</string>
                       </property>
                      </widget>
                     </item>
@@ -1298,28 +1279,19 @@
                  <property name="title">
                   <string>Vector Corrections</string>
                  </property>
-                 <layout class="QGridLayout" name="gridLayout_23">
+                 <layout class="QGridLayout" name="gridLayout_14">
                   <property name="leftMargin">
-                   <number>8</number>
-                  </property>
-                  <property name="topMargin">
-                   <number>10</number>
-                  </property>
-                  <property name="rightMargin">
-                   <number>8</number>
-                  </property>
-                  <property name="bottomMargin">
-                   <number>5</number>
+                   <number>9</number>
                   </property>
                   <item row="0" column="0">
-                   <layout class="QGridLayout" name="gridLayout_24">
-                    <item row="1" column="0">
-                     <widget class="QCheckBox" name="pos_smoothing_CB">
+                   <layout class="QGridLayout" name="gridLayout_6">
+                    <item row="0" column="0" colspan="2">
+                     <widget class="QCheckBox" name="pos_badvector_CB">
                       <property name="enabled">
                        <bool>true</bool>
                       </property>
                       <property name="text">
-                       <string>Vector Smoothing</string>
+                       <string>Bad Vectors Replacement</string>
                       </property>
                      </widget>
                     </item>
@@ -1332,6 +1304,12 @@
                     </item>
                     <item row="0" column="2">
                      <widget class="QComboBox" name="pos_bv_method_CB">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
                       <item>
                        <property name="text">
                         <string>localmean</string>
@@ -1356,24 +1334,37 @@
                       </property>
                      </widget>
                     </item>
-                    <item row="0" column="0" colspan="2">
-                     <widget class="QCheckBox" name="pos_badvector_CB">
-                      <property name="enabled">
-                       <bool>true</bool>
-                      </property>
-                      <property name="text">
-                       <string>Bad Vectors Replacement</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="1" column="1" colspan="2">
+                    <item row="1" column="2">
                      <widget class="QLineEdit" name="pos_smth_factor_LE">
                       <property name="placeholderText">
                        <string>smoothing coeff. u, v</string>
                       </property>
                      </widget>
                     </item>
-                    <item row="2" column="0">
+                    <item row="1" column="0" colspan="2">
+                     <widget class="QCheckBox" name="pos_smoothing_CB">
+                      <property name="enabled">
+                       <bool>true</bool>
+                      </property>
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="text">
+                       <string>Vector Smoothing</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="2" column="2">
+                     <widget class="QLineEdit" name="pos_fm_LE">
+                      <property name="placeholderText">
+                       <string>ex. rotCW, flipUD</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="2" column="0" colspan="2">
                      <widget class="QCheckBox" name="pos_fieldmanip_CB">
                       <property name="enabled">
                        <bool>true</bool>
@@ -1383,20 +1374,91 @@
                       </property>
                      </widget>
                     </item>
-                    <item row="2" column="1" colspan="2">
-                     <widget class="QLineEdit" name="pos_fm_LE">
-                      <property name="placeholderText">
-                       <string>ex. rotCW, flipUD</string>
-                      </property>
-                     </widget>
-                    </item>
                    </layout>
                   </item>
                  </layout>
                 </widget>
                </item>
+               <item row="2" column="0">
+                <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="0,1,2">
+                 <property name="spacing">
+                  <number>6</number>
+                 </property>
+                 <property name="sizeConstraint">
+                  <enum>QLayout::SetDefaultConstraint</enum>
+                 </property>
+                 <property name="leftMargin">
+                  <number>5</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>10</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>25</number>
+                 </property>
+                 <item>
+                  <widget class="QLabel" name="label_15">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>150</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                   <property name="text">
+                    <string>Output Mode</string>
+                   </property>
+                   <property name="alignment">
+                    <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QComboBox" name="pos_output_CB">
+                   <item>
+                    <property name="text">
+                     <string>simple</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>extended</string>
+                    </property>
+                   </item>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="horizontalSpacer_2">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeType">
+                    <enum>QSizePolicy::Preferred</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                </layout>
+               </item>
               </layout>
              </widget>
+            </widget>
+           </item>
+           <item row="2" column="2">
+            <widget class="QPushButton" name="process_savesettings_PB">
+             <property name="text">
+              <string>Save Settings</string>
+             </property>
             </widget>
            </item>
           </layout>
@@ -1459,8 +1521,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>904</width>
-     <height>31</height>
+     <width>876</width>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

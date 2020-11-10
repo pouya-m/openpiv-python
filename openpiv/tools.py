@@ -619,11 +619,12 @@ def create_path(file_name, folders=['Analysis']):
     """creates the file path to the given run counter"""
 
     name = os.path.basename(file_name)
+    name, *_ = name.split('.')
     file_path = os.path.dirname(os.path.dirname(file_name))
     for fold in folders:
         file_path = os.path.join(file_path, fold)
 
-    return os.path.join(file_path, name)
+    return os.path.join(file_path, name+'.dat')
 
 
 def create_directory(directory ,folder='Analysis'):

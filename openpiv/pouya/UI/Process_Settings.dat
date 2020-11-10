@@ -28,3 +28,4 @@ Post-process:
 	Bad Vector Replacement:       ;False          ;localmean      ;50             ;2              
 	Vector Smoothing:             ;False          ;0.1,0.1        
 	Field Manipulation:           ;False          ;flipLR         
+	Output Mode:                  ;extended         

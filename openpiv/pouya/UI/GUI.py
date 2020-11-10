@@ -1,22 +1,23 @@
 # Particle Image Velocimetry GUI
-# By Pouya Mohtat Sep. 2020
+# By Pouya Mohtat Nov. 2020
 
-# Version 0.4 change log:
+# Version 0.5 change log:
 # - progressbars are now updated using Qtimers (a much better implementation)
 # - progress TextEdit now updates usings signals and sluts. We cannot set the TextEdit from another thread even if 
-#   we pass the TextEdit object to the new thread! Random errors and fatal exits are now solved.
-# - done some styling on the progressbars and buttons (test styling)
+#   we pass the TextEdit object to the new thread! Random errors and fatal program exits are now solved
+# - ability to calculate mean and fluctuating values (including TKE and Re stress) was added (extended output)
 # - changed version convention, added icon and help>about page
+# - done some styling on the progressbars and buttons (test styling)
+
 
 from PySide2 import QtWidgets
 from PySide2.QtCore import QThread, Signal, QTimer, Qt
 from PySide2.QtGui import QIcon
 import Main_PIV
 import ImportDialog_Val as ImportDialog_Val
-from openpiv import tools, validation, filters, pyprocess, scaling, postprocessing
-from openpiv.smoothn import smoothn
+from openpiv import tools, validation, filters, pyprocess, scaling, smoothn, postprocessing
 import numpy as np
-import os, sys, time
+import os, sys, glob
 from functools import partial
 import multiprocessing
 from imageio import imsave
@@ -159,7 +160,6 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
         self.updateList(file_paths=file_paths)
 
     def updateList(self, file_paths=None, setchange=None):
-        t1 = time.time()
         if self.files_TW.currentItem():
             current_key = self.files_TW.currentItem().text(0)
         else:
@@ -181,8 +181,6 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
             item.setText(1, str(int(np.sum(self.file_list[key][1]))))
             if key == current_key:
                 self.files_TW.setCurrentItem(item)
-        dt = time.time()-t1
-        print(f'BV calculated in {dt:.2f} sec')
 
     def clearList(self):
         self.files_TW.clear()
@@ -230,7 +228,6 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
 
     def updatePlot(self, current, previous=None):
         if self.files_TW.itemFromIndex(current):
-            t1 = time.time()
             key = self.files_TW.itemFromIndex(current).text(0)
             x, y, u, v, *_ = tools.read_data(self.file_list[key][0])
             mask = self.file_list[key][1]
@@ -258,8 +255,6 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
             self.valplot.axes.set_xlim(xmin, xmax)
             self.valplot.axes.set_ylim(ymin, ymax)
             self.valplot.draw()
-            dt = time.time()-t1
-            print(f'drawing done in {dt:.2f} sec')
     
     def updatePlotSettings(self):
         self.BV_settings = self.BV_settings_CB.currentText()
@@ -372,7 +367,7 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
         pos['sm_ra'] = self.pos_smth_factor_LE.text()
         pos['fm_st'] = str(self.pos_fieldmanip_CB.isChecked())
         pos['fm_in'] = self.pos_fm_LE.text()
-
+        pos['out_m'] = self.pos_output_CB.currentText()
         #saving to file
         postprocessing.saveSettings(exp, pre, pro, pos, path)
 
@@ -424,6 +419,7 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
         self.pos_smth_factor_LE.setText(pos['sm_ra'])
         self.pos_fieldmanip_CB.setChecked(eval(pos['fm_st']))
         self.pos_fm_LE.setText(pos['fm_in'])
+        self.pos_output_CB.setCurrentText(pos['out_m'])
 
     
     def StartBatchProcessing(self):
@@ -437,10 +433,10 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
         self.run_start_PB.setEnabled(False)
         manager = multiprocessing.Manager()
         self.processed_files = manager.list()
-        self.batch_process_thread = BatchProcessThread(exp, pre, pro, pos, self.processed_files)
-        self.batch_process_thread.progress_sig.connect(self.run_progress_TE.appendPlainText)
-        self.batch_process_thread.start()
-        self.batch_process_thread.finished.connect(self.finishBatchProcess)
+        self.process_thread = ProcessThread(exp, pre, pro, pos, self.processed_files)
+        self.process_thread.progress_sig.connect(self.run_progress_TE.appendPlainText)
+        self.process_thread.start()
+        self.process_thread.finished.connect(self.finishProcess)
 
         nrun = len(exp['run'].split(','))
         nexp = len(exp['exp'].split(','))
@@ -464,23 +460,17 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
             if progress == 0:
                 progress = self.nf
         self.run_progress_PBar.setValue(progress)
-    
-    def finishBatchProcess(self):
-        #self.run_progress_TE.clear()
-        self.run_progress_TE.appendPlainText('PIV Process done!')
 
-        #----------------------------------------------------------
-        # here we should start another thread for post processing!
-        #----------------------------------------------------------
-
-        #self.run_progress_TE.ensureCursorVisible()
+    def finishProcess(self):
+        self.run_progress_TE.appendPlainText('All done!')
         self.run_start_PB.setEnabled(True)
 
 
-class BatchProcessThread(QThread):
+
+class ProcessThread(QThread):
 
     def __init__(self, exp, pre, pro, pos, processed_files):
-        super(BatchProcessThread, self).__init__()
+        super(ProcessThread, self).__init__()
         self.exp, self.pre, self.pro, self.pos = exp, pre, pro, pos
         self.processed_files = processed_files
         
@@ -489,38 +479,73 @@ class BatchProcessThread(QThread):
     def run(self):
         for experiment in self.exp['exp'].split(','):
             for run in self.exp['run'].split(','):
+                
+                # prepare data directories
                 experiment, run = experiment.strip(), run.strip()
                 run_path = os.path.join(self.exp['dir'], experiment, run)
                 analysis_path = tools.create_directory(run_path)                #creates the Analysis folder if not already there
                 tools.create_directory(analysis_path, folder='Unvalidated')     #creates the Unvalidated folder if not already there
-                #self.TE.clear()
-                #self.TE.setPlainText(f'Processing run: {experiment} / {run}')
-                #self.TE.ensureCursorVisible()
-                self.progress_sig.emit(f'Processing run: {experiment} / {run}')
                 data_dir = os.path.join(run_path, 'Raw Data')
-                task = tools.Multiprocesser( data_dir=data_dir, pattern_a=self.exp['patA'], pattern_b=self.exp['patB'] )
+                
                 # preprocess
+                self.progress_sig.emit(f'Processing run: {experiment} / {run}')
+                task = tools.Multiprocesser( data_dir=data_dir, pattern_a=self.exp['patA'], pattern_b=self.exp['patB'] )
                 if self.pre['bg_st'] == 'True':
-                    #self.TE.setPlainText('finding bg...')
-                    #self.TE.ensureCursorVisible()
                     self.progress_sig.emit('finding background...')
                     background_a, background_b = task.find_background(n_files=int(self.pre['bg_nf']), chunk_size=int(self.pre['bg_cs']), n_cpus=int(self.pre['bg_nc']))
                     imsave(os.path.join(analysis_path, 'background_a.TIF'), background_a)
                     imsave(os.path.join(analysis_path, 'background_b.TIF'), background_b)
                 else:
                     background_a, background_b = None, None
-                # main process
-                #self.TE.setPlainText('main process...')
-                #self.TE.ensureCursorVisible()
-                self.progress_sig.emit('main PIV process...')
+                
+                # piv+post process
+                self.progress_sig.emit('main process...')
                 task.n_files = int(self.exp['nf'])
-                Process = partial(batchProcess, bga=background_a, bgb=background_b, pro=self.pro, pos=self.pos, processed_files=self.processed_files)
-                task.run( func = Process, n_cpus=int(self.pro['nc']) )
-                #print(self.processed_files)
+                Process = partial(mainProcess, bga=background_a, bgb=background_b, pro=self.pro, pos=self.pos, processed_files=self.processed_files)
+                data = task.run( func = Process, n_cpus=int(self.pro['nc']) )
+                
+                # extended output
+                if self.pos['out_m'] == 'extended':
+                    self.progress_sig.emit('calculating extended output...')
+                    # initialize variables to hold data
+                    im_file, *_ = glob.glob(os.path.join(data_dir, self.exp['patA']))
+                    image = tools.imread(im_file)
+                    x, y = pyprocess.get_coordinates(image.shape, int(self.pro['ws']), int(self.pro['ol']))
+                    u, v, mask, vor, velMag = np.zeros((5, x.shape[0], x.shape[1], int(self.exp['nf'])), np.float)
+                    basename = np.zeros((int(self.exp['nf']),), 'U50')
+                    # do field manipulation and scaling on x and y
+                    if self.pos['fm_st'] == 'True':
+                        for fm in self.pos['fm_in'].split(','):
+                            x, y, *_ = tools.manipulate_field(x, y, x, x, x, mode=fm.strip())
+                    scale = float(self.pro['sc'])
+                    x, y = x/scale, y/scale
+                    # extract data
+                    for n, D in enumerate(data):
+                        basename[n], u[:,:,n], v[:,:,n], mask[:,:,n], vor[:,:,n], velMag[:,:,n] = D
+                    del(data)
+                    # calculate mean values
+                    um, vm, vorm = u.mean(axis=2), v.mean(axis=2), vor.mean(axis=2)
+                    # calculate fluctuations
+                    up = u - um[...,np.newaxis]
+                    vp = v - vm[...,np.newaxis]
+                    upvp = up * vp
+                    TKE = 0.5 * (up*up + vp*vp)
+                    upupm = (up*up).mean(axis=2)
+                    vpvpm = (vp*vp).mean(axis=2)
+                    upvpm = upvp.mean(axis=2)
+                    TKE_rms = 0.5 * (upupm + vpvpm)
+                    # save the results
+                    avg_file = os.path.join(analysis_path, 'AVG.dat')
+                    header = '"x", "y", "u_avg", "v_avg", "vorticity_avg", "upup_avg", "vpvp_avg", "upvp_avg", "TKE_rms"'
+                    tools.save( x, y, filename=avg_file, variables=[um, vm, vorm, upupm, vpvpm, upvpm, TKE_rms], header=header )
+
+                    header = '"x", "y", "u", "v", "mask", "vorticity", "velocity magnitude", "up", "vp", "upvp", "TKE"'
+                    for n, bn in enumerate(basename):
+                        fname = os.path.join(analysis_path, bn)
+                        tools.save( x, y, filename=fname, variables=[u[:,:,n], v[:,:,n], mask[:,:,n], vor[:,:,n], velMag[:,:,n], up[:,:,n], vp[:,:,n], upvp[:,:,n], TKE[:,:,n]], header=header )
 
 
-
-def batchProcess( args, bga, bgb, pro, pos, processed_files):
+def mainProcess( args, bga, bgb, pro, pos, processed_files):
     # unpacking the arguments
     file_a, file_b, counter = args
     # read images
@@ -535,13 +560,51 @@ def batchProcess( args, bga, bgb, pro, pos, processed_files):
         window_size=int(pro['ws']), overlap=int(pro['ol']), dt=float(pro['ts']), search_area_size=int(pro['sa']), sig2noise_method=pro['s2n'])
     x, y = pyprocess.get_coordinates( image_size=frame_a.shape, window_size=int(pro['ws']), overlap=int(pro['ol']) )
     save_path = tools.create_path(file_a, folders=['Analysis', 'Unvalidated'])
-    tools.save(x, y, u, v, sig2noise, save_path+'.dat')
+    tools.save(x, y, u, v, sig2noise, save_path)
+    #post processing
+    #validation
+    mask = np.zeros(u.shape, dtype=bool)
+    if pos['s2n_st'] == 'True':
+        u, v, mask1 = validation.sig2noise_val( u, v, sig2noise, threshold = float(pos['s2n_ra']) )
+        mask = mask | mask1
+    if pos['gv_st'] == 'True':
+        umin, umax = map(float, pos['gv_ul'].split(','))
+        vmin, vmax = map(float, pos['gv_vl'].split(','))
+        u, v, mask2 = validation.global_val( u, v, (umin, umax), (vmin, vmax) )
+        mask = mask | mask2
+    if pos['lv_st'] == 'True':
+        udif, vdif = map(float, pos['lv_df'].split(','))
+        u, v, mask3 = validation.local_median_val(u, v, udif, vdif, size=int(pos['lv_kr']))
+        mask = mask | mask3
+    if pos['std_st'] == 'True':
+        u, v, mask4 = validation.global_std(u, v, std_threshold=float(pos['std_ra']))
+        mask = mask | mask4
+    # vector corrections
+    if pos['bv_st'] == 'True':
+        u, v = filters.replace_outliers( u, v, method=pos['bv_mt'], max_iter=int(pos['bv_ni']), kernel_size=int(pos['bv_kr']))
+    if pos['sm_st'] == 'True':
+        u_ra, v_ra = map(float, pos['sm_ra'].split(','))
+        u, *_ = smoothn.smoothn(u, s=u_ra)
+        v, *_ = smoothn.smoothn(v, s=v_ra)
+    if pos['fm_st'] == 'True':
+        for fm in pos['fm_in'].split(','):
+            x, y, u, v, mask = tools.manipulate_field(x, y, u, v, mask, mode=fm.strip())
+    # scaling
+    scale = float(pro['sc'])
+    x, y, u, v = scaling.uniform(x, y, u, v, scaling_factor = scale)
+    # calculate vorticity and velocity magnitude
+    vor = postprocessing.vorticity(u, v, x, y)
+    velMag = np.sqrt(u*u + v*v)
+    # update processed files, then save or return values
+    processed_files.append(save_path)
+    if pos['out_m'] == 'simple':
+        header = '"x", "y", "u", "v", "mask", "vorticity", "velocity magnitude"'
+        fname = tools.create_path(file_a)
+        tools.save(x, y, filename=fname, variables=[u, v, mask, vor, velMag], header=header)
+    else:
+        basename = os.path.basename(save_path)
+        return basename, u, v, mask, vor, velMag
 
-    #--------------------------------
-    #removed post processing part - it's better to do it separately
-    #--------------------------------
-
-    processed_files.append(save_path+'.dat')
        
 
 def simpleProcess( args, processed_files, WS, OL, DT, SA, S2N):

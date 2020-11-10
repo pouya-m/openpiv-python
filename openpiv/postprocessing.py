@@ -2,14 +2,14 @@
 # including calculations of vorticity and temporal analysis such as calculation of mean and fluctuating velocity components, turbulent kinetic energy and Reynolds stresses
 # Vorticity calculations are accurate! it has been validated against base Matlab code and Tecplot calculaions. All calculations are performed using vector calculus to reduce run time.
 # By: Pouya Mohtat
-# Revision 0.2: 5 Nov, 2020
+# Revision 0.2: Nov, 2020
 
 # To do:
 # ------------
 # 1- A second order difference method can be implimented to calculate vorticity. It may increase the robustness of the vorticity results to noisy velocity signals.
 
-# 3- reading and writting to the setting file was rearranged into stand-alone functions taking and returning the exp, pre, pro, pos dictionaries!
-#    this should tidy up the GUI program tremendously once implimented. Also the folder management in GUI needs to be updated!
+# 2- This script takes the unvalidated piv outputs and does post processing on those results. in the GUI we are doing the same thing only that we are doing it on 
+#    x, y, u, v results directly instead of reading it from files (to increase speed, obviously). so there is some duplicate code that could be refracted.
 
 
 import numpy as np
@@ -246,6 +246,7 @@ def saveSettings(exp, pre, pro, pos, file_name):
         fh.write('\t{0:<30};{1:<15};{2:<15};{3:<15}\n'.format('Local Velocity:', pos['lv_st'], pos['lv_df'], pos['lv_kr']))
         fh.write('\t{0:<30};{1:<15};{2:<15};{3:<15};{4:<15}\n'.format('Bad Vector Replacement:', pos['bv_st'], pos['bv_mt'], pos['bv_ni'], pos['bv_kr']))
         fh.write('\t{0:<30};{1:<15};{2:<15}\n\t{3:<30};{4:<15};{5:<15}\n'.format('Vector Smoothing:', pos['sm_st'], pos['sm_ra'], 'Field Manipulation:', pos['fm_st'], pos['fm_in']))
+        fh.write('\t{0:<30};{1:<15}\n'.format('Output Mode:', pos['out_m']))
 
 
 def loadSettings(file_name):
@@ -278,6 +279,7 @@ def loadSettings(file_name):
     *_, pos['bv_st'], pos['bv_mt'], pos['bv_ni'], pos['bv_kr'] = [lines[27].split(';')[i].strip() for i in range(5)]
     *_, pos['sm_st'], pos['sm_ra'] = [lines[28].split(';')[i].strip() for i in range(3)]
     *_, pos['fm_st'], pos['fm_in'] = [lines[29].split(';')[i].strip() for i in range(3)]
+    *_, pos['out_m'] = [lines[30].split(';')[i].strip() for i in range(2)]
 
     return exp, pre, pro, pos
     
@@ -311,18 +313,19 @@ if __name__ == "__main__":
     tools.save(x, y, filename=fname, header='"x", "y", "u", "v", "mask", "vorticity"', variables=[u, v, mask, vor])
     
     # settings
-    pos = {}
-    pos['s2n_st'], pos['s2n_ra'] = 'False', '1'
-    pos['gv_st'], pos['gv_ul'], pos['gv_vl'] = 'True', '-2000, 2000', '-2000, 4000'
-    pos['std_st'], pos['std_ra'] = 'False', '3'
-    pos['lv_st'], pos['lv_df'], pos['lv_kr'] = 'True', '600, 600', '2'
-    pos['bv_st'], pos['bv_mt'], pos['bv_ni'], pos['bv_kr'] = 'True', 'localmean', '10', '2'
-    pos['sm_st'], pos['sm_ra'] = 'True', '0.5, 0.5'
-    pos['fm_st'], pos['fm_in'] = 'False', 'flipUD, rotateCW'
+    filename = r'E:\repos\openpiv-python\openpiv\pouya\UI\Process_Settings.dat'
+    exp, pre, pro, pos = loadSettings(filename)
     
     from collections import defaultdict as ddict
     import pprint
 
+    pprint.pprint(pos)
+    pos['out_m'] = 'extended'
+    saveSettings(exp, pre, pro, pos, filename)
+    exp2, pr2e, pro2, pos2 = loadSettings(filename)
+    pprint.pprint(pos2)
+
+    
     exp = ddict(lambda: '')
     pre = ddict(lambda: '')
     pro = ddict(lambda: '')
@@ -351,13 +354,7 @@ if __name__ == "__main__":
     '''
     # read data
     datafile = r'E:\Temp\Zoomed in Cylinder\Fixed180\Analysis\Theta1800deg000001.dat'
-    x, y, u, v, mask = tools.read_data(datafile)
-    dx = x[0,0] - x[0,1]
-    vor1 = vorticity(u,v,dx,dx)
-    vor2 = vorticity_nonUniformMesh(u,v,x,y)
-    plt.subplot(121)
-    plt.imshow(vor1,cmap='viridis', vmin=-100, vmax=100, interpolation='spline16', origin='lower')
-    plt.subplot(122)
-    plt.imshow(vor2,cmap='viridis', vmin=-100, vmax=100, interpolation='spline16', origin='lower')
+    x, y, u, v, mask, vor, velMag = tools.read_data(datafile, 7)
+    plt.imshow(vor,cmap='viridis', vmin=-100, vmax=100, interpolation='spline16', origin='lower')
     plt.show()
     '''
