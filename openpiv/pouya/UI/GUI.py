@@ -3,6 +3,8 @@
 
 # Version 0.4 change log:
 # - progressbars are now updated using Qtimers (a much better implementation)
+# - progress TextEdit now updates usings signals and sluts. We cannot set the TextEdit from another thread even if 
+#   we pass the TextEdit object to the new thread! Random errors and fatal exits are now solved.
 # - done some styling on the progressbars and buttons (test styling)
 # - changed version convention, added icon and help>about page
 
@@ -11,7 +13,7 @@ from PySide2.QtCore import QThread, Signal, QTimer, Qt
 from PySide2.QtGui import QIcon
 import Main_PIV
 import ImportDialog_Val as ImportDialog_Val
-from openpiv import tools, validation, filters, pyprocess, scaling
+from openpiv import tools, validation, filters, pyprocess, scaling, postprocessing
 from openpiv.smoothn import smoothn
 import numpy as np
 import os, sys, time
@@ -330,7 +332,7 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
                 'Select a location to save the settings', 'Process_Settings.dat')
         if path == '':
             return
-        #getting the settings
+        #getting the settings from GUI
         exp, pre, pro, pos = {}, {}, {}, {}
         exp['dir'] = self.exp_directory_LE.text()
         exp['exp'] = self.exp_experiments_LE.text()
@@ -370,60 +372,19 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
         pos['sm_ra'] = self.pos_smth_factor_LE.text()
         pos['fm_st'] = str(self.pos_fieldmanip_CB.isChecked())
         pos['fm_in'] = self.pos_fm_LE.text()
+
         #saving to file
-        with open(path, 'w') as fh:
-            fh.write('Process settings:\n\n')
-            fh.write('Experiment:\n\t{0:<30};'.format('Directory:'))
-            fh.write('{0}\n\t{1:<30};{2}\n\t{3:<30};{4}\n'.format(exp['dir'], 'Experiments:', exp['exp'], 'Runs:', exp['run']))
-            fh.write('\t{0:<30};{1:<15};{2:<15};{3:<15}\n\n'.format('Files:', exp['patA'], exp['patB'], exp['nf']))
-            fh.write('Pre-Process:\n\t{0:<30};{1:<15};{2:<15};{3:<15};{4:<15}\n'.format('Remove Background:', pre['bg_st'], pre['bg_nf'], pre['bg_cs'], pre['bg_nc']))
-            fh.write('\t{0:<30};{1:<15};{2:<15}\n'.format('Static Mask:', pre['sm_st'], pre['sm_pa']))
-            fh.write('\t{0:<30};{1:<15}\n\n'.format('Dynamic Mask:', pre['dm_st']))
-            fh.write('Process:\n\t{0:<30};{1:<15}\n\t{2:<30};{3:<15}\n\t{4:<30};{5:<15}\n'.format('Window Size:', pro['ws'], 'Search Area Size:', pro['sa'], 'Overlap:', pro['ol']))
-            fh.write('\t{0:<30};{1:<15}\n\t{2:<30};{3:<15}\n\t{4:<30};{5:<15}\n'.format('Signal/Noise Method:', pro['s2n'], 'Time Step:', pro['ts'], 'Scale:', pro['sc']))
-            fh.write('\t{0:<30};{1:<15}\n\n'.format('Number of CPUs:', pro['nc']))
-            fh.write('Post-process:\n\t{0:<30};{1:<15};{2:<15}\n'.format('Signal/Noise:', pos['s2n_st'], pos['s2n_ra']))
-            fh.write('\t{0:<30};{1:<15};{2:<15};{3:<15}\n'.format('Global Velocity:', pos['gv_st'], pos['gv_ul'], pos['gv_vl']))
-            fh.write('\t{0:<30};{1:<15};{2:<15}\n'.format('Global Standard Deviation:', pos['std_st'], pos['std_ra']))
-            fh.write('\t{0:<30};{1:<15};{2:<15};{3:<15}\n'.format('Local Velocity:', pos['lv_st'], pos['lv_df'], pos['lv_kr']))
-            fh.write('\t{0:<30};{1:<15};{2:<15};{3:<15};{4:<15}\n'.format('Bad Vector Replacement:', pos['bv_st'], pos['bv_mt'], pos['bv_ni'], pos['bv_kr']))
-            fh.write('\t{0:<30};{1:<15};{2:<15}\n\t{3:<30};{4:<15};{5:<15}\n'.format('Vector Smoothing:', pos['sm_st'], pos['sm_ra'], 'Field Manipulation:', pos['fm_st'], pos['fm_in']))
+        postprocessing.saveSettings(exp, pre, pro, pos, path)
 
         return exp, pre, pro, pos      
 
     def loadProSettings(self):
-        #load and read file
+        #load setting file
         path, ext = QtWidgets.QFileDialog.getOpenFileName(self, \
             'Select settings file', 'Process_Settings.dat')
         if path == '':
             return
-        lines = []
-        with open(path, 'r') as fh:
-            for line in fh:
-                lines.append(line[:-1])
-        #extract and set values
-        exp, pre, pro, pos = {}, {}, {}, {}
-        *_, exp['dir'] = lines[3].split(';')
-        *_, exp['exp'] = lines[4].split(';')
-        *_, exp['run'] = lines[5].split(';')
-        *_, exp['patA'], exp['patB'], exp['nf'] = [lines[6].split(';')[i].strip() for i in range(4)]
-        *_, pre['bg_st'], pre['bg_nf'], pre['bg_cs'], pre['bg_nc'] = [lines[9].split(';')[i].strip() for i in range(5)]
-        *_, pre['sm_st'], pre['sm_pa'] = [lines[10].split(';')[i].strip() for i in range(3)]
-        *_, pre['dm_st'] = [lines[11].split(';')[i].strip() for i in range(2)]
-        *_, pro['ws'] = [lines[14].split(';')[i].strip() for i in range(2)]
-        *_, pro['sa'] = [lines[15].split(';')[i].strip() for i in range(2)]
-        *_, pro['ol'] = [lines[16].split(';')[i].strip() for i in range(2)]
-        *_, pro['s2n'] = [lines[17].split(';')[i].strip() for i in range(2)]
-        *_, pro['ts'] = [lines[18].split(';')[i].strip() for i in range(2)]
-        *_, pro['sc'] = [lines[19].split(';')[i].strip() for i in range(2)]
-        *_, pro['nc'] = [lines[20].split(';')[i].strip() for i in range(2)]
-        *_, pos['s2n_st'], pos['s2n_ra'] = [lines[23].split(';')[i].strip() for i in range(3)]
-        *_, pos['gv_st'], pos['gv_ul'], pos['gv_vl'] = [lines[24].split(';')[i].strip() for i in range(4)]
-        *_, pos['std_st'], pos['std_ra'] = [lines[25].split(';')[i].strip() for i in range(3)]
-        *_, pos['lv_st'], pos['lv_df'], pos['lv_kr'] = [lines[26].split(';')[i].strip() for i in range(4)]
-        *_, pos['bv_st'], pos['bv_mt'], pos['bv_ni'], pos['bv_kr'] = [lines[27].split(';')[i].strip() for i in range(5)]
-        *_, pos['sm_st'], pos['sm_ra'] = [lines[28].split(';')[i].strip() for i in range(3)]
-        *_, pos['fm_st'], pos['fm_in'] = [lines[29].split(';')[i].strip() for i in range(3)]
+        exp, pre, pro, pos = postprocessing.loadSettings(path)
 
         self.exp_directory_LE.setText(exp['dir'])
         self.exp_experiments_LE.setText(exp['exp'])
@@ -469,13 +430,15 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
         if os.path.isdir(self.exp_directory_LE.text()):
             directory = os.path.join(self.exp_directory_LE.text(), 'Processing_Settings.dat')
         else:
-            QtWidgets.QMessageBox.warning(self, 'Experiment Directory Not Found!', 'The selected directory is not a valid path. Please select a valid directory in the "Run Settings" under "Experiment" tab...')
+            QtWidgets.QMessageBox.warning(self, 'Experiment Directory Not Found!', 
+                'The selected directory is not a valid path. Please select a valid directory in the "Run Settings" under "Experiment" tab...')
             return
         exp, pre, pro, pos = self.saveProSettings(directory)
         self.run_start_PB.setEnabled(False)
         manager = multiprocessing.Manager()
         self.processed_files = manager.list()
-        self.batch_process_thread = BatchProcessThread(exp, pre, pro, pos, self.processed_files, self.run_progress_TE)
+        self.batch_process_thread = BatchProcessThread(exp, pre, pro, pos, self.processed_files)
+        self.batch_process_thread.progress_sig.connect(self.run_progress_TE.appendPlainText)
         self.batch_process_thread.start()
         self.batch_process_thread.finished.connect(self.finishBatchProcess)
 
@@ -504,42 +467,52 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
     
     def finishBatchProcess(self):
         #self.run_progress_TE.clear()
-        self.run_progress_TE.appendPlainText('all done!')
-        self.run_progress_TE.ensureCursorVisible()
+        self.run_progress_TE.appendPlainText('PIV Process done!')
+
+        #----------------------------------------------------------
+        # here we should start another thread for post processing!
+        #----------------------------------------------------------
+
+        #self.run_progress_TE.ensureCursorVisible()
         self.run_start_PB.setEnabled(True)
 
 
 class BatchProcessThread(QThread):
 
-    def __init__(self, exp, pre, pro, pos, processed_files, TE):
+    def __init__(self, exp, pre, pro, pos, processed_files):
         super(BatchProcessThread, self).__init__()
         self.exp, self.pre, self.pro, self.pos = exp, pre, pro, pos
         self.processed_files = processed_files
-        self.TE = TE
+        
+    progress_sig = Signal(str)  #signals have to be defined as class variables
 
     def run(self):
         for experiment in self.exp['exp'].split(','):
             for run in self.exp['run'].split(','):
                 experiment, run = experiment.strip(), run.strip()
                 run_path = os.path.join(self.exp['dir'], experiment, run)
-                analysis_path = tools.create_directory(run_path) #creates the Analysis folder if not already there
+                analysis_path = tools.create_directory(run_path)                #creates the Analysis folder if not already there
+                tools.create_directory(analysis_path, folder='Unvalidated')     #creates the Unvalidated folder if not already there
                 #self.TE.clear()
-                self.TE.appendPlainText(f'Processing run: {experiment} / {run}')
+                #self.TE.setPlainText(f'Processing run: {experiment} / {run}')
                 #self.TE.ensureCursorVisible()
+                self.progress_sig.emit(f'Processing run: {experiment} / {run}')
                 data_dir = os.path.join(run_path, 'Raw Data')
                 task = tools.Multiprocesser( data_dir=data_dir, pattern_a=self.exp['patA'], pattern_b=self.exp['patB'] )
                 # preprocess
                 if self.pre['bg_st'] == 'True':
-                    self.TE.appendPlainText('finding bg...')
+                    #self.TE.setPlainText('finding bg...')
                     #self.TE.ensureCursorVisible()
+                    self.progress_sig.emit('finding background...')
                     background_a, background_b = task.find_background(n_files=int(self.pre['bg_nf']), chunk_size=int(self.pre['bg_cs']), n_cpus=int(self.pre['bg_nc']))
                     imsave(os.path.join(analysis_path, 'background_a.TIF'), background_a)
                     imsave(os.path.join(analysis_path, 'background_b.TIF'), background_b)
                 else:
                     background_a, background_b = None, None
                 # main process
-                self.TE.appendPlainText('main process...')
+                #self.TE.setPlainText('main process...')
                 #self.TE.ensureCursorVisible()
+                self.progress_sig.emit('main PIV process...')
                 task.n_files = int(self.exp['nf'])
                 Process = partial(batchProcess, bga=background_a, bgb=background_b, pro=self.pro, pos=self.pos, processed_files=self.processed_files)
                 task.run( func = Process, n_cpus=int(self.pro['nc']) )
@@ -561,38 +534,13 @@ def batchProcess( args, bga, bgb, pro, pos, processed_files):
     u, v, sig2noise = pyprocess.extended_search_area_piv( frame_a, frame_b, \
         window_size=int(pro['ws']), overlap=int(pro['ol']), dt=float(pro['ts']), search_area_size=int(pro['sa']), sig2noise_method=pro['s2n'])
     x, y = pyprocess.get_coordinates( image_size=frame_a.shape, window_size=int(pro['ws']), overlap=int(pro['ol']) )
-    save_path = tools.create_path(file_a, folder='Analysis')
-    tools.save(x, y, u, v, sig2noise, save_path+'_unvalidated.dat')
-    # validation
-    mask = np.zeros(u.shape, dtype=bool)
-    if pos['s2n_st'] == 'True':
-        u, v, mask1 = validation.sig2noise_val( u, v, sig2noise, threshold = float(pos['s2n_ra']) )
-        mask = mask | mask1
-    if pos['gv_st'] == 'True':
-        umin, umax = pos['gv_ul'].split(',')
-        vmin, vmax = pos['gv_vl'].split(',')
-        u, v, mask2 = validation.global_val( u, v, (float(umin), float(umax)), (float(vmin), float(vmax)) )
-        mask = mask | mask2
-    if pos['lv_st'] == 'True':
-        udif, vdif = pos['lv_df'].split(',')
-        u, v, mask3 = validation.local_median_val(u, v, float(udif), float(vdif), size=int(pos['lv_kr']))
-        mask = mask | mask3
-    if pos['std_st'] == 'True':
-        u, v, mask4 = validation.global_std(u, v, std_threshold=float(pos['std_ra']))
-        mask = mask | mask4
-    # vector corrections
-    if pos['bv_st'] == 'True':
-        u, v = filters.replace_outliers( u, v, method=pos['bv_mt'], max_iter=int(pos['bv_ni']), kernel_size=int(pos['bv_kr']))
-    if pos['sm_st'] == 'True':
-        u_ra, v_ra = pos['sm_ra'].split(',')
-        u, *_ = smoothn(u, s=float(u_ra))
-        v, *_ = smoothn(v, s=float(v_ra))
-    if pos['fm_st'] == 'True':
-        for fm in pos['fm_in'].split(','):
-            x, y, u, v, mask = tools.manipulate_field(x, y, u, v, mask, mode=fm.strip())
-    # scaling and saving the final results
-    x, y, u, v = scaling.uniform(x, y, u, v, scaling_factor = float(pro['sc']))
-    tools.save(x, y, u, v, mask, save_path+'.dat')
+    save_path = tools.create_path(file_a, folders=['Analysis', 'Unvalidated'])
+    tools.save(x, y, u, v, sig2noise, save_path+'.dat')
+
+    #--------------------------------
+    #removed post processing part - it's better to do it separately
+    #--------------------------------
+
     processed_files.append(save_path+'.dat')
        
 

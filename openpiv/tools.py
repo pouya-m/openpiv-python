@@ -615,14 +615,15 @@ def manipulate_field ( x, y, u, v, mask, mode ):
     return x, y, u, v, mask
 
 
-def create_path(file_name, folder='Analysis'):
+def create_path(file_name, folders=['Analysis']):
     """creates the file path to the given run counter"""
 
     name = os.path.basename(file_name)
-    name, *_ = name.split('.')
-    directory = os.path.dirname(os.path.dirname(file_name))
-    file_path = os.path.join(directory, f'{folder}/{name}')
-    return file_path
+    file_path = os.path.dirname(os.path.dirname(file_name))
+    for fold in folders:
+        file_path = os.path.join(file_path, fold)
+
+    return os.path.join(file_path, name)
 
 
 def create_directory(directory ,folder='Analysis'):
