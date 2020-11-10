@@ -1,0 +1,55 @@
+QProgressBar{
+	background-color: rgb(230, 230, 230);
+	color: rgb(0,0,0);
+	border: 1px solid rgb(150,150,230);
+	border-radius: 10px;
+	text-align: center;
+}
+
+QProgressBar:disabled{
+	border: 1px solid rgb(150,150,150);
+	color: rgb(150,150,150);
+}
+
+QProgressBar::chunk{
+	background-color: qlineargradient(spread:pad, x1:0, y1:0.579, x2:1, y2:0.585,
+	stop:0 rgba(200, 200, 255, 255), stop:1 rgba(20, 140, 230, 255));
+	border-radius: 10px;
+}
+
+QPushButton
+{
+	background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1,
+	stop:0 rgba(220, 220, 220, 255), stop:1 rgba(245, 245, 245, 255));
+	color: rgb(0,0,0);
+	border: 1px solid rgb(180,180,180);
+	min-width: 90px;
+	min-height: 20px;
+	border-radius: 4px;
+	padding: 6px;
+}
+
+QPushButton:hover
+{
+	background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1,
+	stop:0 rgba(220, 220, 250, 255), stop:1 rgba(245, 245, 255, 255));
+	color: rgb(0,0,0);
+	border: 1px solid rgb(100,100,220);
+	min-width: 90px;
+	min-height: 20px;
+	border-radius: 4px;
+	padding: 5px;
+}
+
+QPushButton:pressed
+{
+	background-color: rgb(215,215,250);
+	border: 1px solid rgb(100,100,220);
+}
+
+QPushButton:disabled
+{
+	
+	color: rgb(140,140,140);
+	border-color: rgb(180,180,180);
+}

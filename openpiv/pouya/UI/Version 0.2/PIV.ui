@@ -1,0 +1,548 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="enabled">
+   <bool>true</bool>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>904</width>
+    <height>542</height>
+   </rect>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout_3">
+    <item row="0" column="0">
+     <widget class="QTabWidget" name="Main_tabs">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>8</pointsize>
+        <weight>50</weight>
+        <italic>false</italic>
+        <bold>false</bold>
+        <underline>false</underline>
+        <strikeout>false</strikeout>
+       </font>
+      </property>
+      <property name="acceptDrops">
+       <bool>false</bool>
+      </property>
+      <property name="accessibleDescription">
+       <string/>
+      </property>
+      <property name="autoFillBackground">
+       <bool>false</bool>
+      </property>
+      <property name="tabPosition">
+       <enum>QTabWidget::North</enum>
+      </property>
+      <property name="tabShape">
+       <enum>QTabWidget::Rounded</enum>
+      </property>
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <property name="elideMode">
+       <enum>Qt::ElideNone</enum>
+      </property>
+      <property name="usesScrollButtons">
+       <bool>true</bool>
+      </property>
+      <property name="documentMode">
+       <bool>false</bool>
+      </property>
+      <property name="tabsClosable">
+       <bool>false</bool>
+      </property>
+      <property name="movable">
+       <bool>false</bool>
+      </property>
+      <property name="tabBarAutoHide">
+       <bool>false</bool>
+      </property>
+      <widget class="QWidget" name="Validation">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <attribute name="title">
+        <string>Validation</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_4">
+        <item row="0" column="0">
+         <widget class="QSplitter" name="splitter">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <widget class="QWidget" name="layoutWidget">
+           <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0">
+            <item>
+             <widget class="QGroupBox" name="settings_GB">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="font">
+               <font>
+                <pointsize>8</pointsize>
+                <weight>50</weight>
+                <italic>false</italic>
+                <bold>false</bold>
+                <kerning>true</kerning>
+               </font>
+              </property>
+              <property name="autoFillBackground">
+               <bool>false</bool>
+              </property>
+              <property name="title">
+               <string>Thresholding Settings</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+              </property>
+              <property name="flat">
+               <bool>false</bool>
+              </property>
+              <property name="checkable">
+               <bool>false</bool>
+              </property>
+              <property name="checked">
+               <bool>false</bool>
+              </property>
+              <layout class="QGridLayout" name="gridLayout_5">
+               <item row="0" column="0">
+                <layout class="QVBoxLayout" name="verticalLayout_2">
+                 <item>
+                  <layout class="QGridLayout" name="gridLayout">
+                   <item row="1" column="0">
+                    <widget class="QCheckBox" name="global_velocity_CB">
+                     <property name="enabled">
+                      <bool>true</bool>
+                     </property>
+                     <property name="text">
+                      <string>Global Velocity</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QLineEdit" name="global_uVelocity_LE">
+                     <property name="placeholderText">
+                      <string>Umin, Umax</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="2">
+                    <widget class="QLineEdit" name="global_vVelocity_LE">
+                     <property name="placeholderText">
+                      <string>Vmin, Vmax</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="0">
+                    <widget class="QCheckBox" name="local_velocity_CB">
+                     <property name="enabled">
+                      <bool>true</bool>
+                     </property>
+                     <property name="text">
+                      <string>Local Median</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="1">
+                    <widget class="QLineEdit" name="local_velocity_LE">
+                     <property name="placeholderText">
+                      <string>Udiff, Vdiff</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="2">
+                    <widget class="QLineEdit" name="local_kernel_LE">
+                     <property name="placeholderText">
+                      <string>kernel size</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="0">
+                    <widget class="QCheckBox" name="s2n_CB">
+                     <property name="enabled">
+                      <bool>true</bool>
+                     </property>
+                     <property name="text">
+                      <string>Signal 2 Noise</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="3" column="0" colspan="2">
+                    <widget class="QCheckBox" name="global_std_CB">
+                     <property name="enabled">
+                      <bool>true</bool>
+                     </property>
+                     <property name="text">
+                      <string>Global Std. Deviation</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="2">
+                    <widget class="QLineEdit" name="s2n_LE">
+                     <property name="enabled">
+                      <bool>true</bool>
+                     </property>
+                     <property name="whatsThis">
+                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                     </property>
+                     <property name="text">
+                      <string/>
+                     </property>
+                     <property name="frame">
+                      <bool>true</bool>
+                     </property>
+                     <property name="placeholderText">
+                      <string>signal/noise</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="3" column="2">
+                    <widget class="QLineEdit" name="global_std_LE">
+                     <property name="placeholderText">
+                      <string>std multiplier</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </item>
+                 <item>
+                  <layout class="QHBoxLayout" name="horizontalLayout">
+                   <item>
+                    <widget class="QPushButton" name="apply_settings_PB">
+                     <property name="text">
+                      <string>Apply Settings</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QPushButton" name="load_settings_PB">
+                     <property name="text">
+                      <string>Load Settings</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QPushButton" name="save_settings_PB">
+                     <property name="enabled">
+                      <bool>true</bool>
+                     </property>
+                     <property name="text">
+                      <string>Save Settings</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </item>
+                </layout>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QTreeWidget" name="files_TW">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="autoScroll">
+               <bool>true</bool>
+              </property>
+              <property name="indentation">
+               <number>0</number>
+              </property>
+              <property name="itemsExpandable">
+               <bool>true</bool>
+              </property>
+              <property name="sortingEnabled">
+               <bool>true</bool>
+              </property>
+              <property name="animated">
+               <bool>true</bool>
+              </property>
+              <property name="allColumnsShowFocus">
+               <bool>false</bool>
+              </property>
+              <property name="wordWrap">
+               <bool>false</bool>
+              </property>
+              <property name="headerHidden">
+               <bool>false</bool>
+              </property>
+              <attribute name="headerShowSortIndicator" stdset="0">
+               <bool>true</bool>
+              </attribute>
+              <column>
+               <property name="text">
+                <string>File</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Num. Bad Vector</string>
+               </property>
+              </column>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="plot_widget" native="true">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+             <horstretch>1</horstretch>
+             <verstretch>1</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>450</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="autoFillBackground">
+            <bool>false</bool>
+           </property>
+           <widget class="QLineEdit" name="plot_settings_LE">
+            <property name="geometry">
+             <rect>
+              <x>160</x>
+              <y>30</y>
+              <width>70</width>
+              <height>30</height>
+             </rect>
+            </property>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>70</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>70</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>b,r,50,2</string>
+            </property>
+            <property name="placeholderText">
+             <string>b,r,50,2</string>
+            </property>
+           </widget>
+           <widget class="QComboBox" name="BV_settings_CB">
+            <property name="geometry">
+             <rect>
+              <x>240</x>
+              <y>30</y>
+              <width>165</width>
+              <height>30</height>
+             </rect>
+            </property>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>165</width>
+              <height>30</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>165</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <item>
+             <property name="text">
+              <string>Show Original BV</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Show Replaced BV</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Do Not Show BV</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Only Show BV</string>
+             </property>
+            </item>
+           </widget>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="Process">
+       <attribute name="title">
+        <string>Process</string>
+       </attribute>
+       <widget class="QLabel" name="label_4">
+        <property name="geometry">
+         <rect>
+          <x>13</x>
+          <y>13</y>
+          <width>451</width>
+          <height>22</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>This part of the program is still under development.</string>
+        </property>
+       </widget>
+      </widget>
+      <widget class="QWidget" name="FrequencyAnalysis">
+       <attribute name="title">
+        <string>Freq. Analysis</string>
+       </attribute>
+       <widget class="QLabel" name="label_5">
+        <property name="geometry">
+         <rect>
+          <x>13</x>
+          <y>13</y>
+          <width>431</width>
+          <height>22</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>This part of the program is still under development.</string>
+        </property>
+       </widget>
+      </widget>
+      <widget class="QWidget" name="ModalAnalysis">
+       <attribute name="title">
+        <string>Modal Analysis</string>
+       </attribute>
+       <widget class="QLabel" name="label_6">
+        <property name="geometry">
+         <rect>
+          <x>13</x>
+          <y>13</y>
+          <width>471</width>
+          <height>22</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>This part of the program is still under development.</string>
+        </property>
+       </widget>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>904</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionLoad_Files"/>
+    <addaction name="actionLoad_Raw_Images"/>
+    <addaction name="actionClear_Files"/>
+    <addaction name="actionExit"/>
+   </widget>
+   <addaction name="menuFile"/>
+  </widget>
+  <action name="actionLoad_Files">
+   <property name="text">
+    <string>Load Files</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>Exit</string>
+   </property>
+  </action>
+  <action name="actionClear_Files">
+   <property name="text">
+    <string>Clear Files</string>
+   </property>
+  </action>
+  <action name="actionLoad_Raw_Images">
+   <property name="text">
+    <string>Load Raw Images</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

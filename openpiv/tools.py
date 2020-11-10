@@ -306,33 +306,40 @@ def find_boundaries(threshold, list_img1, list_img2, filename, picname):
 
 
 
-def save( x, y, u, v, mask, filename, fmt='%8.4f', delimiter='\t' ):
+def save( x, y, u=None, v=None, mask=None, filename=None, variables=None, header='"x", "y", "U", "V", "S2N"', fmt='%8.4f', delimiter='\t' ):
     """Save flow field to an ascii file.
     
     Parameters
     ----------
     x : 2d np.ndarray
         a two dimensional array containing the x coordinates of the 
-        interrogation window centers, in pixels.
+        interrogation window centers
         
     y : 2d np.ndarray
         a two dimensional array containing the y coordinates of the 
-        interrogation window centers, in pixels.
+        interrogation window centers
         
     u : 2d np.ndarray
-        a two dimensional array containing the u velocity components,
-        in pixels/seconds.
+        a two dimensional array containing the u velocity components
         
     v : 2d np.ndarray
-        a two dimensional array containing the v velocity components,
-        in pixels/seconds.
+        a two dimensional array containing the v velocity components
         
     mask : 2d np.ndarray
         a two dimensional boolen array where elements corresponding to
-        invalid vectors are True.
+        invalid vectors are True
         
     filename : string
         the path of the file where to save the flow field
+
+    variables : list of 2d np.ndarray
+        a list of variables to be written to the file. default is None
+        in which case the default variables: u, v, and mask will be used.
+        If specified, the given variabes replace the defaults and a 
+        suitable header needs to be given.
+
+    header: string
+        a string specifying the variable names for each column in the output.
         
     fmt : string
         a format string. See documentation of numpy.savetxt
@@ -347,13 +354,19 @@ def save( x, y, u, v, mask, filename, fmt='%8.4f', delimiter='\t' ):
     >>> openpiv.tools.save( x, y, u, v, 'field_001.txt', fmt='%6.3f', delimiter='\t')
     
     """
+    if variables is None:
+        v = [x, y, u, v, mask]
+    else:
+        v = [x, y]
+        for var in variables:
+            v.append(var)
     
     # build output array
-    out = np.vstack( [m.ravel() for m in [x, y, u, v, mask] ] )
+    out = np.vstack( [m.ravel() for m in v ] )
             
     # save data to file.
     #(Pouya) added a header line for direct import to Tecplot
-    headerline=f'VARIABLES = "x", "y", "U", "V", "S2N", ZONE I={x.shape[1]}, J={x.shape[0]}'
+    headerline=f'VARIABLES = {header}, ZONE I={x.shape[1]}, J={x.shape[0]}'
     np.savetxt( filename, out.T, fmt=fmt, delimiter=delimiter, header=headerline, comments='' )
 
 def display( message ):
@@ -556,8 +569,8 @@ def display_windows_sampling( x, y, window_size, skip=0,  method='standard'):
 # (Pouya) added all the functions from this line down
 #--------------------------------------------------------------
 
-def read_data(filename):
-    """function to read the saved data file and reconstruct the field data
+def read_data(filename, Ncolumn=5):
+    """function to read the saved data file and reconstruct the 2D field data
     
     Parameters
     ----------
@@ -565,17 +578,17 @@ def read_data(filename):
 
     Returns
     --------
-    x, y, u, v, mask : numpy arrays containing the position and field data
+    x, y, u, v, mask : 2D numpy arrays containing the position and field data
     """
     a = np.loadtxt(filename, skiprows=1)
-    nx = int((a[-1,0]-a[0,0])/(a[1,0]-a[0,0]) + 1)
+    nx = int(round((a[-1,0]-a[0,0])/(a[1,0]-a[0,0]) + 1))
     ny = a.shape[0]//nx 
-    m = np.zeros((ny, nx, 5))
-    for j in range(5):
+    m = np.zeros((ny, nx, Ncolumn))
+    for j in range(Ncolumn):
         for i in range(ny):
             m[i,:,j] = a[i*nx:(i+1)*nx,j].T
     
-    return m[:,:,0], m[:,:,1], m[:,:,2], m[:,:,3], m[:,:,4]
+    return [m[:,:,n] for n in range(Ncolumn)]
 
 
 def manipulate_field ( x, y, u, v, mask, mode ):

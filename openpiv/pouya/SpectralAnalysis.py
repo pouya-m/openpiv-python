@@ -269,13 +269,13 @@ def global_spectra(file_list, nx, nfreq, fs=1, dim_ratio=1):
     
     return Su_max, Su_map, Sv_max, Sv_map, Fr
 
-'''
-#code to test functions:
-path = os.path.dirname(os.path.abspath(__file__))
-file_list = glob.glob(path+'\Dummy Data\dp*.txt')
-file_list.sort()
 
-point_fft(file_list, gx=64, gy=16, fs=10)
-point_stft(file_list, 6gx=4, gy=16, nperseg=16, noverlap=10, fs=10)
-Su_max, Su_map, Sv_max, Sv_map, Fr = global_spectra (file_list, nx=52, nfreq=16, fs=10)
-'''
+#code to test functions
+if __name__ == "__main__":
+    path = os.path.dirname(os.path.abspath(__file__))
+    file_list = glob.glob(path+'\Dummy Data\dp*.txt')
+    file_list.sort()
+
+    point_fft(file_list, gx=64, gy=16, fs=10)
+    point_stft(file_list, 6gx=4, gy=16, nperseg=16, noverlap=10, fs=10)
+    Su_max, Su_map, Sv_max, Sv_map, Fr = global_spectra (file_list, nx=52, nfreq=16, fs=10)
