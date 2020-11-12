@@ -9,6 +9,13 @@
 # - changed version convention, added icon and help>about page
 # - done some styling on the progressbars and buttons (test styling)
 
+# to do:
+#------------------------------------
+# 1- local median filter seems to work better with kernal=2 but in some situations it will not catch bad vectors with kernel=2 and we need to specify kernel=1 to catch them.
+#    this should be investigated and possibly we should provide an option to apply multiple median filters back to back or with vector replacement in between. 
+
+# 2- there should be an option to use already calculated background image files from previous runs (saved in the analysis folder) instead of calculating them each time.
+
 
 from PySide2 import QtWidgets
 from PySide2.QtCore import QThread, Signal, QTimer, Qt
@@ -197,29 +204,32 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
 
 
     def calculateMask(self, key):
-        u1, v1 = self.file_list[key][2], self.file_list[key][3]
-        u, v = u1.copy(), v1.copy()
+        u, v = self.file_list[key][2], self.file_list[key][3]
+        
         if self.s2n_CB.isChecked():
             sig2noise = self.file_list[key][4]
             thr = float(self.s2n_LE.text())
-            u, v, mask1 = validation.sig2noise_val( u, v, sig2noise, threshold = thr )
+            mask1 = validation.sig2noise_val( u, v, sig2noise, threshold = thr )
         else:
             mask1 = np.zeros(u.shape, dtype=bool)
+            
         if self.global_velocity_CB.isChecked():
             ulim = [float(i) for i in self.global_uVelocity_LE.text().split(',')]
             vlim = [float(i) for i in self.global_vVelocity_LE.text().split(',')]
-            u, v, mask2 = validation.global_val( u, v, (ulim[0], ulim[1]), (vlim[0], vlim[1]) )
+            mask2 = validation.global_val( u, v, (ulim[0], ulim[1]), (vlim[0], vlim[1]) )
         else:
             mask2 = np.zeros(u.shape, dtype=bool)
+
         if self.local_velocity_CB.isChecked():
             lim = [float(i) for i in self.local_velocity_LE.text().split(',')]
             ksize = int(self.local_kernel_LE.text())
-            u, v, mask3 = validation.local_median_val(u, v, lim[0], lim[1], size=ksize)
+            mask3 = validation.local_median_val(u, v, lim[0], lim[1], size=ksize)
         else:
             mask3 = np.zeros(u.shape, dtype=bool)
+
         if self.global_std_CB.isChecked():
             std = float(self.global_std_LE.text())
-            u, v, mask4 = validation.global_std(u, v, std_threshold=std)
+            mask4 = validation.global_std(u, v, std_threshold=std)
         else:
             mask4 = np.zeros(u.shape, dtype=bool)
 
@@ -485,7 +495,7 @@ class ProcessThread(QThread):
                 run_path = os.path.join(self.exp['dir'], experiment, run)
                 analysis_path = tools.create_directory(run_path)                #creates the Analysis folder if not already there
                 tools.create_directory(analysis_path, folder='Unvalidated')     #creates the Unvalidated folder if not already there
-                data_dir = os.path.join(run_path, 'Raw Data')
+                data_dir = os.path.join(run_path, 'RawData')
                 
                 # preprocess
                 self.progress_sig.emit(f'Processing run: {experiment} / {run}')
@@ -511,14 +521,14 @@ class ProcessThread(QThread):
                     im_file, *_ = glob.glob(os.path.join(data_dir, self.exp['patA']))
                     image = tools.imread(im_file)
                     x, y = pyprocess.get_coordinates(image.shape, int(self.pro['ws']), int(self.pro['ol']))
-                    u, v, mask, vor, velMag = np.zeros((5, x.shape[0], x.shape[1], int(self.exp['nf'])), np.float)
-                    basename = np.zeros((int(self.exp['nf']),), 'U50')
                     # do field manipulation and scaling on x and y
                     if self.pos['fm_st'] == 'True':
                         for fm in self.pos['fm_in'].split(','):
                             x, y, *_ = tools.manipulate_field(x, y, x, x, x, mode=fm.strip())
                     scale = float(self.pro['sc'])
                     x, y = x/scale, y/scale
+                    u, v, mask, vor, velMag = np.zeros((5, x.shape[0], x.shape[1], int(self.exp['nf'])), np.float)
+                    basename = np.zeros((int(self.exp['nf']),), 'U50')
                     # extract data
                     for n, D in enumerate(data):
                         basename[n], u[:,:,n], v[:,:,n], mask[:,:,n], vor[:,:,n], velMag[:,:,n] = D
@@ -543,6 +553,8 @@ class ProcessThread(QThread):
                     for n, bn in enumerate(basename):
                         fname = os.path.join(analysis_path, bn)
                         tools.save( x, y, filename=fname, variables=[u[:,:,n], v[:,:,n], mask[:,:,n], vor[:,:,n], velMag[:,:,n], up[:,:,n], vp[:,:,n], upvp[:,:,n], TKE[:,:,n]], header=header )
+                
+        return True
 
 
 def mainProcess( args, bga, bgb, pro, pos, processed_files):
@@ -565,22 +577,23 @@ def mainProcess( args, bga, bgb, pro, pos, processed_files):
     #validation
     mask = np.zeros(u.shape, dtype=bool)
     if pos['s2n_st'] == 'True':
-        u, v, mask1 = validation.sig2noise_val( u, v, sig2noise, threshold = float(pos['s2n_ra']) )
+        mask1 = validation.sig2noise_val( u, v, sig2noise, threshold = float(pos['s2n_ra']) )
         mask = mask | mask1
     if pos['gv_st'] == 'True':
         umin, umax = map(float, pos['gv_ul'].split(','))
         vmin, vmax = map(float, pos['gv_vl'].split(','))
-        u, v, mask2 = validation.global_val( u, v, (umin, umax), (vmin, vmax) )
+        mask2 = validation.global_val( u, v, (umin, umax), (vmin, vmax) )
         mask = mask | mask2
     if pos['lv_st'] == 'True':
         udif, vdif = map(float, pos['lv_df'].split(','))
-        u, v, mask3 = validation.local_median_val(u, v, udif, vdif, size=int(pos['lv_kr']))
+        mask3 = validation.local_median_val(u, v, udif, vdif, size=int(pos['lv_kr']))
         mask = mask | mask3
     if pos['std_st'] == 'True':
-        u, v, mask4 = validation.global_std(u, v, std_threshold=float(pos['std_ra']))
+        mask4 = validation.global_std(u, v, std_threshold=float(pos['std_ra']))
         mask = mask | mask4
     # vector corrections
     if pos['bv_st'] == 'True':
+        u[mask], v[mask] = np.nan, np.nan
         u, v = filters.replace_outliers( u, v, method=pos['bv_mt'], max_iter=int(pos['bv_ni']), kernel_size=int(pos['bv_kr']))
     if pos['sm_st'] == 'True':
         u_ra, v_ra = map(float, pos['sm_ra'].split(','))

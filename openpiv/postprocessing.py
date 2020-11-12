@@ -127,22 +127,23 @@ def postProcess(file_name, pro, pos, saveLoc=None, header=None):
     #validation
     mask = np.zeros(u.shape, dtype=bool)
     if pos['s2n_st'] == 'True':
-        u, v, mask1 = validation.sig2noise_val( u, v, s2n, threshold = float(pos['s2n_ra']) )
+        mask1 = validation.sig2noise_val( u, v, s2n, threshold = float(pos['s2n_ra']) )
         mask = mask | mask1
     if pos['gv_st'] == 'True':
         umin, umax = map(float, pos['gv_ul'].split(','))
         vmin, vmax = map(float, pos['gv_vl'].split(','))
-        u, v, mask2 = validation.global_val( u, v, (umin, umax), (vmin, vmax) )
+        mask2 = validation.global_val( u, v, (umin, umax), (vmin, vmax) )
         mask = mask | mask2
     if pos['lv_st'] == 'True':
         udif, vdif = map(float, pos['lv_df'].split(','))
-        u, v, mask3 = validation.local_median_val(u, v, udif, vdif, size=int(pos['lv_kr']))
+        mask3 = validation.local_median_val(u, v, udif, vdif, size=int(pos['lv_kr']))
         mask = mask | mask3
     if pos['std_st'] == 'True':
-        u, v, mask4 = validation.global_std(u, v, std_threshold=float(pos['std_ra']))
+        mask4 = validation.global_std(u, v, std_threshold=float(pos['std_ra']))
         mask = mask | mask4
     # vector corrections
     if pos['bv_st'] == 'True':
+        u[mask], v[mask] = np.nan, np.nan
         u, v = filters.replace_outliers( u, v, method=pos['bv_mt'], max_iter=int(pos['bv_ni']), kernel_size=int(pos['bv_kr']))
     if pos['sm_st'] == 'True':
         u_ra, v_ra = map(float, pos['sm_ra'].split(','))
