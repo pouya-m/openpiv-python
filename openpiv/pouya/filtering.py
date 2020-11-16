@@ -7,14 +7,20 @@
 # 1- when there is nans in the data (a couple of them in the same area), the filters that evaluate the velocity against the nearby flow field (i.e. local_median filter), don't perform well.
 
 # 2- in the current implimentation, the output from each filter affects the filters that are applied after it (u and v are passed through). this results in unwanted coupling behavior between filters.
-# the nans problem mentioned above is a direct result of this. -> this was corrected, now u and v are not passed through and filters are uncoupled. 
+#    the nans problem mentioned above is a direct result of this. -> this was corrected, now u and v are not passed through and filters are uncoupled. 
 
 # 3- some of the bad vectors can only be detected looking at the nearby flow field. currently, the only filter that does this is the local_median filter. maybe other filtering 
-# schemes can be implimented that opperate based on the local flow field.
+#    schemes can be implimented that opperate based on the local flow field.
 
 # 4- the local_median filter takes a global value for "velocity difference threshoulds" that are applied for the whole flow field. this means that small velocity vectors are allowed 
-# to change as much as large velocity vectors are allowed. this can be improved by taking the local velocity scale into account, meaning that the threshould itself can depend on the 
-# local velocity field! -> look at the enhanced_local_median filter bellow
+#    to change as much as large velocity vectors are allowed. this can be improved by taking the local velocity scale into account, meaning that the threshould itself can depend on the 
+#    local velocity field! -> look at the enhanced_local_median filter bellow
+
+# 5- a filter that operates in the time domain can be super effective in catching bad vectors. a simple scheme would be: if a vector changes more than a threshould value between time n and n+1, 
+#    then it can be identified as a bad vector.
+
+# 6- till now we are looking only at velocity difference between points. how about changes in grandients. for example we can look at vorticity changes. (vorticity changes more abruptly when bad 
+#    vectors are present in the flow and it's change may be easier to detect)
 
 
 

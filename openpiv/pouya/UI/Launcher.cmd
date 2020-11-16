@@ -1,3 +1,3 @@
 @echo off
 call activate Min-env
-start python GUI.py
+start pythonw GUI.py

@@ -1,8 +1,13 @@
 # Particle Image Velocimetry GUI
 # By Pouya Mohtat Nov. 2020
 
-# Version 0.6 change log:
-# - Modal analysis tab now active
+# Version 0.5 change log:
+# - progressbars are now updated using Qtimers (a much better implementation)
+# - progress TextEdit now updates usings signals and sluts. We cannot set the TextEdit from another thread even if 
+#   we pass the TextEdit object to the new thread! Random errors and fatal program exits are now solved
+# - ability to calculate mean and fluctuating values (including TKE and Re stress) was added (extended output)
+# - changed version convention, added icon and help>about page
+# - done some styling on the progressbars and buttons (test styling)
 
 # to do:
 #------------------------------------
@@ -11,17 +16,13 @@
 
 # 2- there should be an option to use already calculated background image files from previous runs (saved in the analysis folder) instead of calculating them each time.
 
-# 3- the setting files should be saved in the 'directory/exp' folder and not in the 'directory' where it's too general of a location and may be overwritten by other runs...
-
-# 4- stop buttons don't do anything at the moment. they should provide a gracefull exit from the current running process.
-
 
 from PySide2 import QtWidgets
 from PySide2.QtCore import QThread, Signal, QTimer, Qt
 from PySide2.QtGui import QIcon
 import Main_PIV
 import ImportDialog_Val as ImportDialog_Val
-from openpiv import tools, validation, filters, pyprocess, scaling, smoothn, postprocessing, modal
+from openpiv import tools, validation, filters, pyprocess, scaling, smoothn, postprocessing
 import numpy as np
 import os, sys, glob
 from functools import partial
@@ -118,8 +119,8 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
         self.setupUi(self)
 
         #self.showMaximized()
-        self.version = 0.6
-        self.setWindowTitle(f'PIV Analysis Toolkit V{self.version}')
+        self.version = 0.4
+        self.setWindowTitle(f'Particle Image Velocimetry GUI')
         self.resize(1280, 800)
         self.show()
         self.file_list = {}
@@ -139,16 +140,10 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
         self.BV_settings_CB.currentTextChanged.connect(self.updatePlotSettings)
         self.updatePlotSettings()
         # Process tab initialization
-        self.exp_directory_TB.clicked.connect(lambda: self.getExpDir(tab='process'))
+        self.exp_directory_TB.clicked.connect(self.getExpDir)
         self.process_savesettings_PB.clicked.connect(self.saveProSettings)
         self.process_loadsettings_PB.clicked.connect(self.loadProSettings)
         self.run_start_PB.clicked.connect(self.StartBatchProcessing)
-        # Modal tab initialization
-        self.mdl_load_from_PB.clicked.connect(self.mdlLoadFrom)
-        self.mdl_dir_TB.clicked.connect(lambda: self.getExpDir(tab='modal'))
-        self.mdl_load_PB.clicked.connect(self.mdlLoadSettings)
-        self.mdl_save_PB.clicked.connect(self.mdlSaveSettings)
-        self.mdl_start_PB.clicked.connect(self.mdlStartProcessing)
 
         # Create the maptlotlib FigureCanvas object
         self.valplot = MplCanvas(self, width=5, height=4, dpi=100)
@@ -202,8 +197,8 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
         self.first_plot = True
 
     def showAbout(self):
-        message = f"PIV Analysis Toolkit<br>Version {self.version}<br><br>PIV Analysis Toolkit is based on the \
-            'OpenPIV' open-source project but with many enhanced capabilities.<br><a href='https://github.com\
+        message = f"Particle Image Velocimetry<br>Version {self.version}<br><br>Particle image velocimetry \
+            GUI based on OpenPIV open-source project with added capabilities.<br><a href='https://github.com\
             /pouya-m/openpiv-python/tree/PIV-Code-Pouya'>Github page</a><br><br>By Pouya Mohtat"
         msgBox = QtWidgets.QMessageBox.information(self, 'About', message)
 
@@ -331,12 +326,9 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
         import_dialog = ImportDialog()
         import_dialog.exec_()
         
-    def getExpDir(self, tab):
+    def getExpDir(self):
         dir_path = QtWidgets.QFileDialog.getExistingDirectory(self, 'Select Experiment Directory')
-        if tab == 'process':
-            self.exp_directory_LE.setText(dir_path)
-        elif tab == 'modal':
-            self.mdl_dir_LE.setText(dir_path)
+        self.exp_directory_LE.setText(dir_path)
 
     def saveProSettings(self, path=False):
         #getting the file path
@@ -451,10 +443,10 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
         self.run_start_PB.setEnabled(False)
         manager = multiprocessing.Manager()
         self.processed_files = manager.list()
-        self.piv_process_thread = PIVProcessThread(exp, pre, pro, pos, self.processed_files)
-        self.piv_process_thread.progress_sig.connect(self.run_progress_TE.appendPlainText)
-        self.piv_process_thread.start()
-        self.piv_process_thread.finished.connect(lambda: self.finishProcess(tab='process'))
+        self.process_thread = ProcessThread(exp, pre, pro, pos, self.processed_files)
+        self.process_thread.progress_sig.connect(self.run_progress_TE.appendPlainText)
+        self.process_thread.start()
+        self.process_thread.finished.connect(self.finishProcess)
 
         nrun = len(exp['run'].split(','))
         nexp = len(exp['exp'].split(','))
@@ -479,129 +471,16 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
                 progress = self.nf
         self.run_progress_PBar.setValue(progress)
 
-    def finishProcess(self, tab):
-        if tab == 'process':
-            self.run_progress_TE.appendPlainText('All done!')
-            self.progress_timer.stop()
-            self.run_start_PB.setEnabled(True)
-        elif tab == 'modal':
-            self.mdl_progress_TE.appendPlainText('All done!')
-            self.mdl_start_PB.setEnabled(True)
-
-    def mdlLoadFrom(self):
-        self.mdl_dir_LE.setText(self.exp_directory_LE.text())
-        self.mdl_exp_LE.setText(self.exp_experiments_LE.text())
-        self.mdl_run_LE.setText(self.exp_runs_LE.text())
-        self.mdl_nf_LE.setText(self.exp_nfiles_LE.text())
-
-    def mdlLoadSettings(self):
-        #load setting file
-        path, ext = QtWidgets.QFileDialog.getOpenFileName(self, \
-            'Select settings file', 'Modal_Settings.dat')
-        if path == '':
-            return
-        exp, analysis, rec = modal.ModalAnalysis.loadSettings(path)
-
-        self.mdl_dir_LE.setText(exp['dir'])
-        self.mdl_exp_LE.setText(exp['exp'])
-        self.mdl_pat_LE.setText(exp['pat'])
-        self.mdl_run_LE.setText(exp['run'])
-        self.mdl_nf_LE.setText(exp['nf'])
-        self.mdl_st_CB.setChecked(eval(analysis['st']))
-        self.mdl_method_CB.setCurrentText(analysis['mt'])
-        self.mdl_nm_LE.setText(analysis['nm'])
-        self.mdl_rec_CB.setChecked(eval(rec['st']))
-        self.mdl_rec_nm_LE.setText(rec['nm'])
-        self.mdl_rec_ns_LE.setText(rec['ns'])
-
-    def mdlSaveSettings(self, path=False):
-        #getting the file path
-        if path is False:
-            path, ext = QtWidgets.QFileDialog.getSaveFileName(self, \
-                'Select a location to save the settings', 'Modal_Settings.dat')
-        if path == '':
-            return
-        #getting the settings from GUI
-        exp, analysis, rec = {}, {}, {}
-        exp['dir'] = self.mdl_dir_LE.text()
-        exp['exp'] = self.mdl_exp_LE.text()
-        exp['pat'] = self.mdl_pat_LE.text()
-        exp['run'] = self.mdl_run_LE.text()
-        exp['nf'] = self.mdl_nf_LE.text()
-        analysis['st'] = str(self.mdl_st_CB.isChecked())
-        analysis['mt'] = self.mdl_method_CB.currentText()
-        analysis['nm'] = self.mdl_nm_LE.text()
-        rec['st'] = str(self.mdl_rec_CB.isChecked())
-        rec['nm'] = self.mdl_rec_nm_LE.text()
-        rec['ns'] = self.mdl_rec_ns_LE.text()
-        #saving to file
-        modal.ModalAnalysis.saveSettings(exp, analysis, rec, path)
-
-        return exp, analysis, rec
-
-    def mdlStartProcessing(self):
-        # save process settings
-        directory = self.mdl_dir_LE.text()
-        first_exp, *_ = map(str.strip, self.mdl_exp_LE.text().split(','))
-        saveLoc = os.path.join(directory, first_exp)
-        if os.path.isdir(saveLoc):
-            saveLoc = os.path.join(saveLoc, 'Modal_Settings.dat')
-        else:
-            QtWidgets.QMessageBox.warning(self, 'Experiment Directory Not Found!', 
-                'The selected directory is not a valid path. Please select a valid directory in the "Experiment" section...')
-            return
-        exp, analysis, rec = self.mdlSaveSettings(saveLoc)
-        # start the process thread 
-        self.mdl_start_PB.setEnabled(False)
-        self.mdl_progress_TE.clear()
-        self.modal_process_thread = ModalProcessThread(exp, analysis, rec)
-        self.modal_process_thread.progresstext_sig.connect(self.mdl_progress_TE.appendPlainText)
-        self.modal_process_thread.progressbar_sig.connect(self.mdl_progress_PBar.setValue)
-        self.modal_process_thread.start()
-        self.modal_process_thread.finished.connect(lambda: self.finishProcess(tab='modal'))
-        # set up the progress bar
-        nrun = len(exp['run'].split(','))
-        nexp = len(exp['exp'].split(','))
-        self.mdl_progress_PBar.setEnabled(True)
-        self.mdl_progress_PBar.setRange(0, nrun*nexp)
-        self.mdl_progress_PBar.setValue(0)
+    def finishProcess(self):
+        self.run_progress_TE.appendPlainText('All done!')
+        self.run_start_PB.setEnabled(True)
 
 
-class ModalProcessThread(QThread):
 
-    def __init__(self, exp, analysis, rec):
-        super(ModalProcessThread, self).__init__()
-        self.exp, self.analysis, self.rec = exp, analysis, rec
-        self.progress = 0
-
-    progresstext_sig = Signal(str)
-    progressbar_sig = Signal(int)
-
-    def run(self):
-        for experiment in self.exp['exp'].split(','):
-            for run in self.exp['run'].split(','):
-                experiment = experiment.strip()
-                run = run.strip()
-                path = os.path.join(self.exp['dir'], experiment, run, 'Analysis')
-                self.progresstext_sig.emit(f'modal analysis: {experiment}\{run}')
-                modal_analysis = modal.ModalAnalysis(path, nfiles=int(self.exp['nf']), pattern=self.exp['pat'])
-                if self.analysis['st'] == 'True':
-                    if self.analysis['mt'] == 'Singular Value Decomposition':
-                        self.progresstext_sig.emit('runing SVD...')
-                        modal_analysis.svd(nmode=int(self.analysis['nm']))
-                    elif self.analysis['mt'] == 'Snapshots Method':
-                        self.progresstext_sig.emit('runing snapshots method...')
-                        modal_analysis.snapshot(nmode=int(self.analysis['nm']))
-                if self.rec['st'] == 'True':
-                    self.progresstext_sig.emit('recontructing flow field...')
-                    modal_analysis.reconstructField(nmode=int(self.rec['nm']), nsp=int(self.rec['ns']))
-                self.progress += 1
-                self.progressbar_sig.emit(self.progress)
-
-class PIVProcessThread(QThread):
+class ProcessThread(QThread):
 
     def __init__(self, exp, pre, pro, pos, processed_files):
-        super(PIVProcessThread, self).__init__()
+        super(ProcessThread, self).__init__()
         self.exp, self.pre, self.pro, self.pos = exp, pre, pro, pos
         self.processed_files = processed_files
         
@@ -632,7 +511,7 @@ class PIVProcessThread(QThread):
                 # piv+post process
                 self.progress_sig.emit('main process...')
                 task.n_files = int(self.exp['nf'])
-                Process = partial(mainPIVProcess, bga=background_a, bgb=background_b, pro=self.pro, pos=self.pos, processed_files=self.processed_files)
+                Process = partial(mainProcess, bga=background_a, bgb=background_b, pro=self.pro, pos=self.pos, processed_files=self.processed_files)
                 data = task.run( func = Process, n_cpus=int(self.pro['nc']) )
                 
                 # extended output
@@ -678,7 +557,7 @@ class PIVProcessThread(QThread):
         return True
 
 
-def mainPIVProcess( args, bga, bgb, pro, pos, processed_files):
+def mainProcess( args, bga, bgb, pro, pos, processed_files):
     # unpacking the arguments
     file_a, file_b, counter = args
     # read images

@@ -89,7 +89,7 @@ if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     app.setStyle('Fusion')
     #app.setStyleSheet(qdarkstyle.load_stylesheet_pyside2())
-    pixmap = QPixmap("C:\\Users\\Asus\\Desktop\\UI\\ImageOpener\\SplashFrog.jpg")
+    pixmap = QPixmap("SplashFrog.jpg")
     splash = QtWidgets.QSplashScreen(pixmap)
     splash.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.SplashScreen)
     splash.show()

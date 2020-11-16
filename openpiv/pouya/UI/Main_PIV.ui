@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>876</width>
-    <height>720</height>
+    <width>836</width>
+    <height>736</height>
    </rect>
   </property>
   <property name="styleSheet">
@@ -64,7 +64,7 @@
        <enum>QTabWidget::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>3</number>
       </property>
       <property name="elideMode">
        <enum>Qt::ElideNone</enum>
@@ -742,7 +742,7 @@
               <enum>QFrame::Raised</enum>
              </property>
              <property name="currentIndex">
-              <number>3</number>
+              <number>1</number>
              </property>
              <property name="tabSpacing">
               <number>4</number>
@@ -752,8 +752,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>838</width>
-                <height>302</height>
+                <width>768</width>
+                <height>250</height>
                </rect>
               </property>
               <attribute name="label">
@@ -889,8 +889,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>815</width>
-                <height>302</height>
+                <width>798</width>
+                <height>250</height>
                </rect>
               </property>
               <attribute name="label">
@@ -927,7 +927,7 @@
                  <item row="1" column="0">
                   <widget class="QCheckBox" name="pre_staticmask_CB">
                    <property name="text">
-                    <string>Static Mask</string>
+                    <string>Static Mask (still under development)</string>
                    </property>
                   </widget>
                  </item>
@@ -982,8 +982,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>838</width>
-                <height>302</height>
+                <width>798</width>
+                <height>250</height>
                </rect>
               </property>
               <attribute name="label">
@@ -1146,9 +1146,9 @@
               <property name="geometry">
                <rect>
                 <x>0</x>
-                <y>0</y>
-                <width>838</width>
-                <height>302</height>
+                <y>-38</y>
+                <width>781</width>
+                <height>288</height>
                </rect>
               </property>
               <attribute name="label">
@@ -1493,24 +1493,357 @@
        <attribute name="title">
         <string>Modal Analysis</string>
        </attribute>
-       <widget class="QLabel" name="label_6">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>20</y>
-          <width>471</width>
-          <height>22</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <pointsize>9</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>This part of the program is still under development.</string>
-        </property>
-       </widget>
+       <layout class="QGridLayout" name="gridLayout_15">
+        <item row="2" column="0">
+         <spacer name="horizontalSpacer_3">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="2" column="2">
+         <widget class="QPushButton" name="mdl_save_PB">
+          <property name="text">
+           <string>Save Settings</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0" colspan="4">
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <item>
+           <widget class="QGroupBox" name="modal_ana_GB">
+            <property name="title">
+             <string>Analysis</string>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_19">
+             <item row="2" column="1">
+              <widget class="QLineEdit" name="mdl_nm_LE">
+               <property name="placeholderText">
+                <string>Number of modes to save</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="label_5">
+               <property name="text">
+                <string>Method</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QComboBox" name="mdl_method_CB">
+               <item>
+                <property name="text">
+                 <string>Singular Value Decomposition</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Snapshots Method</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="label_18">
+               <property name="text">
+                <string>Num. of Modes</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QCheckBox" name="mdl_st_CB">
+               <property name="text">
+                <string>Run Analysis</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QGroupBox" name="modal_rec_GB">
+            <property name="title">
+             <string>Reconstruction</string>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_17">
+             <item row="0" column="0" colspan="3">
+              <widget class="QCheckBox" name="mdl_rec_CB">
+               <property name="text">
+                <string>Perform Field Reconstruction</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="label_19">
+               <property name="text">
+                <string>Num. of Modes</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0" colspan="2">
+              <widget class="QLabel" name="label_20">
+               <property name="text">
+                <string>Num. of Snapshots</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="2">
+              <widget class="QLineEdit" name="mdl_rec_ns_LE">
+               <property name="placeholderText">
+                <string>Number of snapshot to reconstruct</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="2">
+              <widget class="QLineEdit" name="mdl_rec_nm_LE">
+               <property name="placeholderText">
+                <string>Number of modes to use for reconstruction</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="3" column="0" colspan="4">
+         <widget class="QGroupBox" name="modal_run_GB">
+          <property name="title">
+           <string>Run</string>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_20">
+           <item row="0" column="0">
+            <layout class="QGridLayout" name="gridLayout_27">
+             <property name="horizontalSpacing">
+              <number>15</number>
+             </property>
+             <property name="verticalSpacing">
+              <number>12</number>
+             </property>
+             <item row="1" column="0">
+              <widget class="QLabel" name="label_29">
+               <property name="text">
+                <string>Run Progress</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="2">
+              <widget class="QPushButton" name="mdl_start_PB">
+               <property name="enabled">
+                <bool>true</bool>
+               </property>
+               <property name="styleSheet">
+                <string notr="true"/>
+               </property>
+               <property name="text">
+                <string>Start</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="3">
+              <widget class="QPushButton" name="mdl_stop_PB">
+               <property name="enabled">
+                <bool>true</bool>
+               </property>
+               <property name="text">
+                <string>Stop</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1" colspan="3">
+              <widget class="QProgressBar" name="mdl_progress_PBar">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="styleSheet">
+                <string notr="true"/>
+               </property>
+               <property name="value">
+                <number>0</number>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_28">
+               <property name="text">
+                <string>Progress</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QPlainTextEdit" name="mdl_progress_TE">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>16777215</width>
+                 <height>80</height>
+                </size>
+               </property>
+               <property name="layoutDirection">
+                <enum>Qt::LeftToRight</enum>
+               </property>
+               <property name="frameShape">
+                <enum>QFrame::StyledPanel</enum>
+               </property>
+               <property name="midLineWidth">
+                <number>3</number>
+               </property>
+               <property name="horizontalScrollBarPolicy">
+                <enum>Qt::ScrollBarAsNeeded</enum>
+               </property>
+               <property name="tabChangesFocus">
+                <bool>true</bool>
+               </property>
+               <property name="undoRedoEnabled">
+                <bool>false</bool>
+               </property>
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+               <property name="textInteractionFlags">
+                <set>Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+               </property>
+               <property name="centerOnScroll">
+                <bool>true</bool>
+               </property>
+               <property name="placeholderText">
+                <string>Details of the run are shown here...</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item row="0" column="0" colspan="4">
+         <widget class="QGroupBox" name="modal_exp_GB">
+          <property name="title">
+           <string>Experiment</string>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_16">
+           <property name="horizontalSpacing">
+            <number>20</number>
+           </property>
+           <property name="verticalSpacing">
+            <number>5</number>
+           </property>
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_26">
+             <property name="text">
+              <string>Directory</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="label_27">
+             <property name="text">
+              <string>Experiments</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QLineEdit" name="mdl_exp_LE">
+             <property name="text">
+              <string/>
+             </property>
+             <property name="placeholderText">
+              <string>Experiments separated by a comma (,)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="2">
+            <widget class="QLabel" name="label_16">
+             <property name="text">
+              <string>Runs</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="label_6">
+             <property name="text">
+              <string>Pattern</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QLineEdit" name="mdl_pat_LE">
+             <property name="placeholderText">
+              <string>Pattern for files</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="2">
+            <widget class="QLabel" name="label_17">
+             <property name="text">
+              <string>Num. of Files</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLineEdit" name="mdl_dir_LE">
+             <property name="text">
+              <string/>
+             </property>
+             <property name="placeholderText">
+              <string>Path to the experiment directory</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="2">
+            <widget class="QToolButton" name="mdl_dir_TB">
+             <property name="text">
+              <string>...</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="3">
+            <widget class="QLineEdit" name="mdl_nf_LE">
+             <property name="placeholderText">
+              <string>Number of files to use</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="3">
+            <widget class="QLineEdit" name="mdl_run_LE">
+             <property name="text">
+              <string/>
+             </property>
+             <property name="placeholderText">
+              <string>Runs separated by a comma (,)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0" colspan="4">
+            <widget class="QPushButton" name="mdl_load_from_PB">
+             <property name="text">
+              <string>Load Experiment Settings From The Process Tab</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QPushButton" name="mdl_load_PB">
+          <property name="text">
+           <string>Load Settings</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </widget>
      </widget>
     </item>
@@ -1521,8 +1854,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>876</width>
-     <height>21</height>
+     <width>836</width>
+     <height>31</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

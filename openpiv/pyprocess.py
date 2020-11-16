@@ -431,7 +431,7 @@ def extended_search_area_piv(
         subpixel_method='gaussian', 
         sig2noise_method=None,
         width=2, 
-        nfftx=0, nffty=0):
+        nfftx=0, nffty=0, max_dis=0.25):
     """Standard PIV cross-correlation algorithm, with an option for 
     extended area search that increased dynamic range. The search region
     in the second frame is larger than the interrogation window size in the 
@@ -494,6 +494,12 @@ def extended_search_area_piv(
        default is the same interrogation window size and it is a 
        fallback to the simplest FFT based PIV
 
+    max_dis : float
+        maximum allowed displacement as a fraction of window size. default is 0.25
+        which means if dispalcement is greater than (0.25*window_size) the velocity 
+        vector is identified as bad measurement. if the second correlation peak produces
+        better values then the velocity and signal2noise ratios are replaced with those 
+        correspoding to the second peak otherwise they are set to zero.
 
     Returns
     -------
@@ -581,7 +587,7 @@ def extended_search_area_piv(
             window_a = frame_a[top : top + window_size, left : left + window_size]
 
             # (Pouya) Now the larger search area (window_b) is selected
-            # we need to pad around frame_b with zeros to fill the corners/edges so that the larger search area is available
+            # we need to pad around frame_b with zeros to fill the outside edges so that the larger search area is available
             # this padding also has the effect of moving the effective top and left edges of each window_b to the top and
             # left respectively. so the old top and left values for frame_a can be reused without change here as the new top 
             # and left values for frame_b. and we already padded frame_b outside the loop so:
@@ -612,7 +618,19 @@ def extended_search_area_piv(
                     sig2noise[k,m] = sig2noise_ratio(
                         corr, sig2noise_method=sig2noise_method, width=width)
                 
-    
+                #(Pouya) added code to check maximum displacement and try secondary peak
+                # check maximum displacemnt and try to recover better data if displacement is too high
+                maxD = max_dis*window_size
+                if (abs(u[k,m]) > maxD) or (abs(v[k,m]) > maxD):
+                    row, col, s2n = find_secondary_displacement(corr, subpixel_method=subpixel_method,sig2noise_method=sig2noise_method, width=width)
+                    row -= (search_area_size + window_size)//2 - 1
+                    col -= (search_area_size + window_size)//2 - 1
+                    u[k,m],v[k,m] = -col, row
+                    sig2noise[k,m] = s2n
+                    if (abs(u[k,m]) > maxD) or (abs(v[k,m]) > maxD):
+                        u[k,m], v[k,m] = 0, 0
+                        sig2noise[k,m] = 0
+     
     # return output depending if user wanted sig2noise information
     if sig2noise_method is not None:
         return u/dt, v/dt, sig2noise
@@ -625,3 +643,55 @@ def nextpower2(i):
     n = 1
     while n < i: n *= 2
     return n
+
+
+# (Pouya) added function
+def find_secondary_displacement(corr, subpixel_method='gaussian',sig2noise_method=None, width=2):
+    """finds displacement using the second correlation peak
+    
+    Parameters
+    -----------
+    corr: 2D.ndarray
+        correlation map
+
+    subpixel_method : string
+        one of the following methods to estimate subpixel location of the peak:
+        'centroid' [replaces default if correlation map is negative],
+        'gaussian' [default if correlation map is positive],
+        'parabolic'.
+
+    sig2noise_method : string
+        defines the method of signal-to-noise-ratio measure,
+        ('peak2peak' or 'peak2mean'. If None, no measure is performed.)
+
+    width : int
+        the half size of the region around the first
+        correlation peak to ignore for finding the second
+        peak. [default: 2]. Only used if ``sig2noise_method==peak2peak``
+
+    returns
+    --------
+    row, col: int
+        the fractional row and column indices for the sub-pixel  
+        approximation of the correlation peak
+    
+    s2n: float
+        signal to noise ratio
+
+    """
+    i, j, *_ = find_first_peak(corr)
+    # create a masked view of the corr
+    tmp = corr.view(ma.MaskedArray)
+    iini = max(0, i - width)
+    ifin = min(i + width + 1, corr.shape[0])
+    jini = max(0, j - width)
+    jfin = min(j + width + 1, corr.shape[1])
+    tmp[iini:ifin, jini:jfin] = ma.masked
+    # use the masked array to find the secondary displacement and sig2noise ratio
+    row, col = find_subpixel_peak_position(tmp, subpixel_method=subpixel_method)
+    if sig2noise_method is not None:
+        s2n = sig2noise_ratio(temp, sig2noise_method=sig2noise_method, width=width)
+        #s2n = -1
+        return row, col, s2n
+    else:
+        return row, col
