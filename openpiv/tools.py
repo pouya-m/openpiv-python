@@ -461,7 +461,7 @@ class Multiprocesser():
                 func( image_pair )
         return res
         
-    # (Pouya) Added this module to calculate background image efficiently
+    # (Pouya) calculate background image using multiprocessing
     def find_background( self, n_files, chunk_size, n_cpus):
         """Finds the background of a and b set of images utilizing
         multiprocessing."""
@@ -480,6 +480,19 @@ class Multiprocesser():
         #print(f'n of images in the last set: {len(file_b[-1])}')
 
         return background_a, background_b
+
+    # vectorized find_background (better and faster method)
+    def find_background2(self, n_files):
+        """Finds the background of a and b set of images"""
+
+        print('finding background image...')
+        background_a = find_bg2(self.files_a[0:n_files])
+        print('- done finding background for image set A')
+        background_b = find_bg2(self.files_b[0:n_files])
+        print('- done finding background for image set B')
+
+        return background_a, background_b
+
                 
 
 def negative( image):
@@ -641,15 +654,28 @@ def find_bg(list_file=None, list_img=None):
     
     if list_img == None:
         list_img = []
-        for I in range(len(list_file)):
-            list_img.append(_imread(list_file[I]))
+        for imgf in list_file:
+            list_img.append(imread(imgf))
     
     background = np.zeros(list_img[0].shape, dtype=np.int32)
     for I in range(background.shape[0]):
         for J in range(background.shape[1]):
             min_1 = list_img[0][I,J]
-            for K in range(len(list_img)):
-                if min_1 > list_img[K][I,J]:
-                    min_1 = list_img[K][I,J]
-            background[I,J]=min_1
+            for img in list_img:
+                if min_1 > img[I,J]:
+                    min_1 = img[I,J]
+            background[I,J] = min_1
     return background
+
+
+# vectorized find_bg:
+def find_bg2(file_list):
+    """finds the background for file list, similar to mark_background2 function but
+    vectorized and thus, much faster"""
+    
+    sample_img = imread(file_list[0])
+    IMG = np.zeros((sample_img.shape[0],sample_img.shape[1],len(file_list)), dtype=np.int32)
+    for i, fl in enumerate(file_list):
+        IMG[:,:,i] = imread(fl)
+
+    return IMG.min(axis=2)

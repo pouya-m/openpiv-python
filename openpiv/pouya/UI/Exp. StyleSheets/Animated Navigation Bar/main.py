@@ -9,42 +9,53 @@ from PySide2.QtCore import (QCoreApplication, QPropertyAnimation, QDate, QDateTi
 from PySide2.QtGui import (QBrush, QColor, QConicalGradient, QCursor, QFont, QFontDatabase, QIcon, QKeySequence, QLinearGradient, QPalette, QPainter, QPixmap, QRadialGradient)
 from PySide2.QtWidgets import *
 
-# Import GUI file and functions
+# Import GUI file
 from ui_main import Ui_MainWindow
-from ui_functions import *
 
 
-class MainWindow(QMainWindow):
+class MainWindow(Ui_MainWindow, QMainWindow):
+
     def __init__(self):
-        QMainWindow.__init__(self)
-        self.ui = Ui_MainWindow()
-        self.ui.setupUi(self)
+        super(MainWindow, self).__init__()
+        self.setupUi(self)
 
         ## Toggle menu
-        self.ui.frame_left_menu.enterEvent = lambda event: UIFunctions.toggleMenu(self, 150)
-        self.ui.frame_left_menu.leaveEvent = lambda event: UIFunctions.toggleMenu(self, 70)
+        self.frame_left_menu.enterEvent = lambda event: self.toggleMenu(150)
+        self.frame_left_menu.leaveEvent = lambda event: self.toggleMenu(50)
 
         ## Pages
-        self.ui.btn_page_1.clicked.connect(lambda: self.btnClicked(1))
-        self.ui.btn_page_2.clicked.connect(lambda: self.btnClicked(2))
-        self.ui.btn_page_3.clicked.connect(lambda: self.btnClicked(3))
+        self.btn_page_1.clicked.connect(lambda: self.btnClicked(1))
+        self.btn_page_2.clicked.connect(lambda: self.btnClicked(2))
+        self.btn_page_3.clicked.connect(lambda: self.btnClicked(3))
 
         self.show()
 
     def btnClicked(self, btn):
         if btn == 1:
-            self.ui.btn_page_2.setChecked(False)
-            self.ui.btn_page_3.setChecked(False)
-            self.ui.stackedWidget.setCurrentWidget(self.ui.page_1)
+            self.btn_page_2.setChecked(False)
+            self.btn_page_3.setChecked(False)
+            self.stackedWidget.setCurrentWidget(self.page_1)
         elif btn == 2:
-            self.ui.btn_page_1.setChecked(False)
-            self.ui.btn_page_3.setChecked(False)
-            self.ui.stackedWidget.setCurrentWidget(self.ui.page_2)
+            self.btn_page_1.setChecked(False)
+            self.btn_page_3.setChecked(False)
+            self.stackedWidget.setCurrentWidget(self.page_2)
         else:
-            self.ui.btn_page_1.setChecked(False)
-            self.ui.btn_page_2.setChecked(False)
-            self.ui.stackedWidget.setCurrentWidget(self.ui.page_3)
-
+            self.btn_page_1.setChecked(False)
+            self.btn_page_2.setChecked(False)
+            self.stackedWidget.setCurrentWidget(self.page_3)
+            
+    def toggleMenu(self, width):
+        # Get width
+        last_width = self.frame_left_menu.width()
+        
+        # Animation
+        self.animation = QPropertyAnimation(self.frame_left_menu, b"minimumWidth")
+        self.animation.setDuration(400)
+        self.animation.setStartValue(last_width)
+        self.animation.setEndValue(width)
+        self.animation.setEasingCurve(QtCore.QEasingCurve.InOutQuart)
+        self.animation.start()
+        
 
 
 if __name__ == "__main__":

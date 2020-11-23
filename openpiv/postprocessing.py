@@ -235,7 +235,7 @@ def saveSettings(exp, pre, pro, pos, file_name):
         fh.write('Experiment:\n\t{0:<30};'.format('Directory:'))
         fh.write('{0}\n\t{1:<30};{2}\n\t{3:<30};{4}\n'.format(exp['dir'], 'Experiments:', exp['exp'], 'Runs:', exp['run']))
         fh.write('\t{0:<30};{1:<15};{2:<15};{3:<15}\n\n'.format('Files:', exp['patA'], exp['patB'], exp['nf']))
-        fh.write('Pre-Process:\n\t{0:<30};{1:<15};{2:<15};{3:<15};{4:<15}\n'.format('Remove Background:', pre['bg_st'], pre['bg_nf'], pre['bg_cs'], pre['bg_nc']))
+        fh.write('Pre-Process:\n\t{0:<30};{1:<15};{2:<15}\n'.format('Remove Background:', pre['bg_st'], pre['bg_nf']))
         fh.write('\t{0:<30};{1:<15};{2:<15}\n'.format('Static Mask:', pre['sm_st'], pre['sm_pa']))
         fh.write('\t{0:<30};{1:<15}\n\n'.format('Dynamic Mask:', pre['dm_st']))
         fh.write('Process:\n\t{0:<30};{1:<15}\n\t{2:<30};{3:<15}\n\t{4:<30};{5:<15}\n'.format('Window Size:', pro['ws'], 'Search Area Size:', pro['sa'], 'Overlap:', pro['ol']))
@@ -263,7 +263,7 @@ def loadSettings(file_name):
     *_, exp['exp'] = lines[4].split(';')
     *_, exp['run'] = lines[5].split(';')
     *_, exp['patA'], exp['patB'], exp['nf'] = [lines[6].split(';')[i].strip() for i in range(4)]
-    *_, pre['bg_st'], pre['bg_nf'], pre['bg_cs'], pre['bg_nc'] = [lines[9].split(';')[i].strip() for i in range(5)]
+    *_, pre['bg_st'], pre['bg_nf']= [lines[9].split(';')[i].strip() for i in range(3)]
     *_, pre['sm_st'], pre['sm_pa'] = [lines[10].split(';')[i].strip() for i in range(3)]
     *_, pre['dm_st'] = [lines[11].split(';')[i].strip() for i in range(2)]
     *_, pro['ws'] = [lines[14].split(';')[i].strip() for i in range(2)]

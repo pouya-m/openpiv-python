@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>836</width>
+    <width>827</width>
     <height>736</height>
    </rect>
   </property>
@@ -64,7 +64,7 @@
        <enum>QTabWidget::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>1</number>
       </property>
       <property name="elideMode">
        <enum>Qt::ElideNone</enum>
@@ -752,8 +752,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>768</width>
-                <height>250</height>
+                <width>394</width>
+                <height>106</height>
                </rect>
               </property>
               <attribute name="label">
@@ -889,8 +889,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>798</width>
-                <height>250</height>
+                <width>789</width>
+                <height>318</height>
                </rect>
               </property>
               <attribute name="label">
@@ -917,10 +917,10 @@
                  <property name="verticalSpacing">
                   <number>8</number>
                  </property>
-                 <item row="0" column="3" colspan="2">
-                  <widget class="QLineEdit" name="pre_bg_ncpus_LE">
-                   <property name="placeholderText">
-                    <string>Number of CPUs</string>
+                 <item row="0" column="0">
+                  <widget class="QCheckBox" name="pre_background_CB">
+                   <property name="text">
+                    <string>Remove Background</string>
                    </property>
                   </widget>
                  </item>
@@ -931,31 +931,10 @@
                    </property>
                   </widget>
                  </item>
-                 <item row="1" column="1" colspan="3">
-                  <widget class="QLineEdit" name="pre_sm_path_LE">
-                   <property name="placeholderText">
-                    <string>Path to the mask image</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="0" column="1">
-                  <widget class="QLineEdit" name="pre_bg_nfiles_LE">
-                   <property name="placeholderText">
-                    <string>Number of files to consider</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="0" column="0">
-                  <widget class="QCheckBox" name="pre_background_CB">
+                 <item row="1" column="4">
+                  <widget class="QToolButton" name="pre_sm_path_TB">
                    <property name="text">
-                    <string>Remove Background</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="0" column="2">
-                  <widget class="QLineEdit" name="pre_bg_chunksize_LE">
-                   <property name="placeholderText">
-                    <string>Chunk size</string>
+                    <string>...</string>
                    </property>
                   </widget>
                  </item>
@@ -966,10 +945,17 @@
                    </property>
                   </widget>
                  </item>
-                 <item row="1" column="4">
-                  <widget class="QToolButton" name="pre_sm_path_TB">
-                   <property name="text">
-                    <string>...</string>
+                 <item row="1" column="1" colspan="3">
+                  <widget class="QLineEdit" name="pre_sm_path_LE">
+                   <property name="placeholderText">
+                    <string>Path to the mask image</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1" colspan="3">
+                  <widget class="QLineEdit" name="pre_bg_nfiles_LE">
+                   <property name="placeholderText">
+                    <string>Number of files to consider</string>
                    </property>
                   </widget>
                  </item>
@@ -982,8 +968,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>798</width>
-                <height>250</height>
+                <width>473</width>
+                <height>78</height>
                </rect>
               </property>
               <attribute name="label">
@@ -1146,9 +1132,9 @@
               <property name="geometry">
                <rect>
                 <x>0</x>
-                <y>-38</y>
-                <width>781</width>
-                <height>288</height>
+                <y>0</y>
+                <width>439</width>
+                <height>246</height>
                </rect>
               </property>
               <attribute name="label">
@@ -1854,8 +1840,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>836</width>
-     <height>31</height>
+     <width>827</width>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -1863,7 +1849,6 @@
      <string>File</string>
     </property>
     <addaction name="actionLoad_Files"/>
-    <addaction name="actionLoad_Raw_Images"/>
     <addaction name="actionClear_Files"/>
     <addaction name="actionExit"/>
    </widget>

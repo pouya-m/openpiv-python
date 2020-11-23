@@ -1,23 +1,25 @@
 # Proper Orthogonal Decomposition
-# By: Pouya Mohtat 
+# By: Pouya Mohtat
+# Sep 2020
 
 import os, glob, warnings, time
 import numpy as np
 import matplotlib.pyplot as plt
 from openpiv import tools
+import random
 
 
 class ModalAnalysis():
     def __init__(self, path, nfiles, pattern):
-        self.path = path
         self.N = nfiles
         file_list = glob.glob(os.path.join(path, pattern))
         file_list.sort()
         self.file_list = file_list[:nfiles]
+        #random.shuffle(self.file_list)
         self.npoints = np.loadtxt(file_list[0], skiprows=1).shape[0]
         self.M = 2 * self.npoints
         self.dir = os.path.join(path, 'Modal Analysis')
-        if os.path.isdir(self.dir)==False:
+        if os.path.isdir(self.dir) == False:
             os.mkdir(self.dir)
 
     def svd(self, nmode='all'):
@@ -112,7 +114,7 @@ class ModalAnalysis():
         u_sorted = np.zeros(u.shape)
         for i, arg in enumerate (arg_sort):
             u_sorted[:,i] = u[:,arg]
-        p = np.cumsum(w_sorted**2)*100/np.sum(w_sorted**2)
+        p = (w_sorted**2)*100/np.sum(w_sorted**2)
         
         return w_sorted, u_sorted, p
 
@@ -185,9 +187,9 @@ class ModalAnalysis():
 
         if w is not None:
             #saving w and p data
-            wp = np.zeros((w.size,3))
-            wp[:,0], wp[:,1], wp[:,2] = range(w.size), w, p
-            headerline = 'TITLE="eignvalues and energy distribution" VARIABLES="mode", "eignvalue", "energy percentage"'
+            wp = np.zeros((w.size,4))
+            wp[:,0], wp[:,1], wp[:,2], wp[:,3] = range(w.size), w, p, np.cumsum(p)
+            headerline = 'TITLE="eignvalues and energy distribution" VARIABLES="mode", "eignvalue", "energy percentage", "cumulative energy percentage"'
             np.savetxt(os.path.join(self.dir, 'Energy Distribution.dat'), wp, fmt='%8.4f', delimiter='\t', header=headerline, comments='')
 
         if a is not None:
@@ -277,4 +279,3 @@ if __name__ == "__main__":
     
     t = time.time() - t1
     print(f'Modal Analysis finished in: {t} sec')
-

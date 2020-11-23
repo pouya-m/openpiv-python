@@ -3,24 +3,26 @@
 
 # Version 0.6 change log:
 # - Modal analysis tab now active
+# - the filters are uncoupled (u and v are not changed in validation and only the mask is calculated and returned)
+# - the experiment folder addressing is changed and patterns are used instead of single folder names, making the folder addresses more flexible.
+# - code to find background image is vectorized and operates more efficiently and much faster. Also the GUI automatically searches for background files.
+#   if there are in the analysis folder then it uses the existing bg files otherwise it calculates the bg.
+# - 'import raw images' dialogue is removed all together. the same functionality can be achieved using the process tab and then import unvalidated files.
 
 # to do:
 #------------------------------------
 # 1- local median filter seems to work better with kernal=2 but in some situations it will not catch bad vectors with kernel=2 and we need to specify kernel=1 to catch them.
 #    this should be investigated and possibly we should provide an option to apply multiple median filters back to back or with vector replacement in between. 
 
-# 2- there should be an option to use already calculated background image files from previous runs (saved in the analysis folder) instead of calculating them each time.
-
-# 3- the setting files should be saved in the 'directory/exp' folder and not in the 'directory' where it's too general of a location and may be overwritten by other runs...
-
-# 4- stop buttons don't do anything at the moment. they should provide a gracefull exit from the current running process.
+# 2- stop buttons don't do anything at the moment. they should provide a gracefull exit from the current running process.
+#    it's necessary to have a stop flag to properly exit from the main 'task.run' multiprocessing loop and have all the child processes 
+#    and workers neatly closed and the resources freed up.
 
 
 from PySide2 import QtWidgets
 from PySide2.QtCore import QThread, Signal, QTimer, Qt
 from PySide2.QtGui import QIcon
 import Main_PIV
-import ImportDialog_Val as ImportDialog_Val
 from openpiv import tools, validation, filters, pyprocess, scaling, smoothn, postprocessing, modal
 import numpy as np
 import os, sys, glob
@@ -43,74 +45,6 @@ class MplCanvas(FigureCanvasQTAgg):
         super(MplCanvas, self).__init__(fig)
 
 
-class ImportDialog(ImportDialog_Val.Ui_ImportDialog_Val, QtWidgets.QDialog):
-
-    def __init__(self):
-        super(ImportDialog, self).__init__()
-        self.setupUi(self)
-        self.folderPath_TB.clicked.connect(self.selectFiles)
-        self.addFiles_PB.clicked.connect(self.addFiles)
-        self.cancel_PB.clicked.connect(self.close)
-
-    def selectFiles(self):
-        dir_path = QtWidgets.QFileDialog.getExistingDirectory(self, 'Select Folder Containing Raw Images')
-        self.folderPath_LE.setText(dir_path)
-
-    def addFiles(self):
-        self.addFiles_PB.setEnabled(False)
-        settings = {}
-        settings['DP']= self.folderPath_LE.text()
-        settings['P_a'] = self.patternA_LE.text()
-        settings['P_b'] = self.patternB_LE.text()
-        settings['N_f'] = int(self.nFiles_LE.text())
-        settings['WS'] = int(self.windowSize_LE.text())
-        settings['OL'] = int(self.overlap_LE.text())
-        settings['DT'] = float(self.timeStep_LE.text())
-        settings['SA'] = int(self.searchSize_LE.text())
-        settings['S2N'] = self.sig2noise_CB.currentText()
-        settings['N_cpu'] = int(self.ncpus_LE.text())
-        manager = multiprocessing.Manager()
-        self.processed_files = manager.list()
-        self.import_process_thread = ImportProcessThread(settings, self.processed_files)
-        self.import_process_thread.start()
-        self.import_process_thread.finished.connect(self.finishSimpleProcess)
-        
-        self.progressBar.setRange(0, settings['N_f'])
-        self.progressBar.setValue(0)
-        self.progress_timer = QTimer(self)
-        self.progress_timer.timeout.connect(self.updateProgressBar)
-        self.progress_timer.start(200)
-
-    def updateProgressBar(self):
-        self.progressBar.setValue(len(self.processed_files))
-
-    def finishSimpleProcess(self):
-        pfile = []
-        for pf in self.processed_files:
-            base, ext = pf.split('.')
-            pfile.append(base + '_unvalidated.' + ext)
-        MainPIV.updateList(main_piv, file_paths=pfile)   
-        self.close()
-    
-
-class ImportProcessThread(QThread):
-
-    def __init__(self, settings, processed_files):
-        super(ImportProcessThread, self).__init__()
-        self.stg = settings
-        self.processed_files = processed_files
-
-    def run(self):
-        Run_path = os.path.dirname(self.stg['DP'])
-        tools.create_directory(Run_path, folder='Analysis')
-        #tools.create_directory(Run_path, folder='Analysis/Validation')
-        task = tools.Multiprocesser( data_dir=self.stg['DP'], pattern_a=self.stg['P_a'], pattern_b=self.stg['P_b'] )
-        task.n_files = self.stg['N_f']
-        process = partial(simpleProcess, processed_files=self.processed_files, WS=self.stg['WS'], OL=self.stg['OL'], \
-            DT=self.stg['DT'], SA=self.stg['SA'], S2N=self.stg['S2N'])
-        task.run( func = process, n_cpus=self.stg['N_cpu'] )
-
-
 class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
 
     def __init__(self):
@@ -126,8 +60,7 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
         self.first_plot = True
         self.actionLoad_Files.triggered.connect(self.selectFiles)
         self.run_progress_TE.ensureCursorVisible()
-        #self.actionExit.triggered.connect(qApp.quit)
-        self.actionLoad_Raw_Images.triggered.connect(self.openRawImages)
+        self.actionExit.triggered.connect(qApp.quit)
         self.actionClear_Files.triggered.connect(self.clearList)
         self.actionAbout.triggered.connect(self.showAbout)
         self.apply_settings_PB.clicked.connect(lambda: self.updateList(setchange=1))
@@ -142,13 +75,15 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
         self.exp_directory_TB.clicked.connect(lambda: self.getExpDir(tab='process'))
         self.process_savesettings_PB.clicked.connect(self.saveProSettings)
         self.process_loadsettings_PB.clicked.connect(self.loadProSettings)
-        self.run_start_PB.clicked.connect(self.StartBatchProcessing)
+        self.run_start_PB.clicked.connect(self.startBatchProcessing)
+        self.run_stop_PB.clicked.connect(self.stopProcess)
         # Modal tab initialization
         self.mdl_load_from_PB.clicked.connect(self.mdlLoadFrom)
         self.mdl_dir_TB.clicked.connect(lambda: self.getExpDir(tab='modal'))
         self.mdl_load_PB.clicked.connect(self.mdlLoadSettings)
         self.mdl_save_PB.clicked.connect(self.mdlSaveSettings)
         self.mdl_start_PB.clicked.connect(self.mdlStartProcessing)
+        self.mdl_stop_PB.clicked.connect(self.stopProcess)
 
         # Create the maptlotlib FigureCanvas object
         self.valplot = MplCanvas(self, width=5, height=4, dpi=100)
@@ -327,9 +262,6 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
         self.global_std_CB.setChecked(eval(gs_state))
         self.global_std_LE.setText(gs_LE)
 
-    def openRawImages(self):
-        import_dialog = ImportDialog()
-        import_dialog.exec_()
         
     def getExpDir(self, tab):
         dir_path = QtWidgets.QFileDialog.getExistingDirectory(self, 'Select Experiment Directory')
@@ -355,8 +287,6 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
         exp['nf'] = self.exp_nfiles_LE.text()
         pre['bg_st'] = str(self.pre_background_CB.isChecked())
         pre['bg_nf'] = self.pre_bg_nfiles_LE.text()
-        pre['bg_cs'] = self.pre_bg_chunksize_LE.text()
-        pre['bg_nc'] = self.pre_bg_ncpus_LE.text()
         pre['sm_st'] = str(self.pre_staticmask_CB.isChecked())
         pre['sm_pa'] = self.pre_sm_path_LE.text()
         pre['dm_st'] = str(self.pre_dynamicmask_CB.isChecked())
@@ -407,8 +337,6 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
         self.exp_nfiles_LE.setText(exp['nf'])
         self.pre_background_CB.setChecked(eval(pre['bg_st']))
         self.pre_bg_nfiles_LE.setText(pre['bg_nf'])
-        self.pre_bg_chunksize_LE.setText(pre['bg_cs'])
-        self.pre_bg_ncpus_LE.setText(pre['bg_nc'])
         self.pre_staticmask_CB.setChecked(eval(pre['sm_st']))
         self.pre_sm_path_LE.setText(pre['sm_pa'])
         self.pre_dynamicmask_CB.setChecked(eval(pre['dm_st']))
@@ -440,26 +368,30 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
         self.pos_output_CB.setCurrentText(pos['out_m'])
 
     
-    def StartBatchProcessing(self):
-        if os.path.isdir(self.exp_directory_LE.text()):
-            directory = os.path.join(self.exp_directory_LE.text(), 'Processing_Settings.dat')
-        else:
+    def startBatchProcessing(self):
+        if not os.path.isdir(self.exp_directory_LE.text()):
             QtWidgets.QMessageBox.warning(self, 'Experiment Directory Not Found!', 
                 'The selected directory is not a valid path. Please select a valid directory in the "Run Settings" under "Experiment" tab...')
             return
-        exp, pre, pro, pos = self.saveProSettings(directory)
+        experiments = glob.glob(os.path.join(self.exp_directory_LE.text(), self.exp_experiments_LE.text()))
+        for exp in experiments:
+            setting_file = os.path.join(exp, 'Processing_Settings.dat')
+            exp, pre, pro, pos = self.saveProSettings(setting_file)
         self.run_start_PB.setEnabled(False)
         manager = multiprocessing.Manager()
         self.processed_files = manager.list()
         self.piv_process_thread = PIVProcessThread(exp, pre, pro, pos, self.processed_files)
         self.piv_process_thread.progress_sig.connect(self.run_progress_TE.appendPlainText)
-        self.piv_process_thread.start()
         self.piv_process_thread.finished.connect(lambda: self.finishProcess(tab='process'))
-
-        nrun = len(exp['run'].split(','))
-        nexp = len(exp['exp'].split(','))
+        self.piv_process_thread.start()
+        #initialize the progress bars
+        nrun = 0
+        experiments =  glob.glob(os.path.join(exp['dir'], exp['exp']))
+        for experiment in experiments:
+            runs = glob.glob(os.path.join(experiment, exp['run']))
+            nrun += len(runs)
         self.nf = int(exp['nf'])
-        ntotal = self.nf*nrun*nexp
+        ntotal = self.nf*nrun
         self.run_progress_PBar.setEnabled(True)
         self.run_overalprogress_PBar.setEnabled(True)
         self.run_overalprogress_PBar.setRange(0, ntotal)
@@ -541,30 +473,61 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
 
     def mdlStartProcessing(self):
         # save process settings
-        directory = self.mdl_dir_LE.text()
-        first_exp, *_ = map(str.strip, self.mdl_exp_LE.text().split(','))
-        saveLoc = os.path.join(directory, first_exp)
-        if os.path.isdir(saveLoc):
-            saveLoc = os.path.join(saveLoc, 'Modal_Settings.dat')
-        else:
+        if not os.path.isdir(self.mdl_dir_LE.text()):
             QtWidgets.QMessageBox.warning(self, 'Experiment Directory Not Found!', 
                 'The selected directory is not a valid path. Please select a valid directory in the "Experiment" section...')
             return
-        exp, analysis, rec = self.mdlSaveSettings(saveLoc)
+        experiments = glob.glob(os.path.join(self.mdl_dir_LE.text(), self.mdl_exp_LE.text()))
+        for experiment in experiments:
+            setting_file = os.path.join(experiment, 'Modal_settings.dat')
+            exp, analysis, rec = self.mdlSaveSettings(setting_file)
         # start the process thread 
         self.mdl_start_PB.setEnabled(False)
         self.mdl_progress_TE.clear()
         self.modal_process_thread = ModalProcessThread(exp, analysis, rec)
         self.modal_process_thread.progresstext_sig.connect(self.mdl_progress_TE.appendPlainText)
         self.modal_process_thread.progressbar_sig.connect(self.mdl_progress_PBar.setValue)
-        self.modal_process_thread.start()
         self.modal_process_thread.finished.connect(lambda: self.finishProcess(tab='modal'))
+        self.modal_process_thread.start()
         # set up the progress bar
-        nrun = len(exp['run'].split(','))
-        nexp = len(exp['exp'].split(','))
+        nrun = 0
+        for experiment in experiments:
+            runs = glob.glob(os.path.join(experiment, exp['run']))
+            nrun += len(runs)
         self.mdl_progress_PBar.setEnabled(True)
-        self.mdl_progress_PBar.setRange(0, nrun*nexp)
+        self.mdl_progress_PBar.setRange(0, nrun)
         self.mdl_progress_PBar.setValue(0)
+
+
+    # still under development, better not use it (directly close the window instead!)
+    def stopProcess(self):
+        qm = QtWidgets.QMessageBox
+        if self.Main_tabs.currentIndex() == 1:
+            if hasattr(self, 'piv_process_thread'):
+                ans = qm.question(self, "Stop Process", "Are you sure you want to stop the process?", \
+                    buttons=qm.StandardButtons(qm.Yes | qm.No), defaultButton=qm.No)
+                if ans == qm.No:
+                    return
+                # this does not work as it's supposed to, the processes are still running because they're busy in 'task.run'
+                # loop and they don't check for exitting requests before they are done!
+                self.piv_process_thread.quit()
+                self.piv_process_thread.stop = True
+                self.piv_process_thread.wait() 
+                self.run_progress_PBar.setValue(0)
+                self.run_overalprogress_PBar.setValue(0)
+                self.run_start_PB.setEnabled(True)
+                self.progress_timer.stop()
+                self.run_progress_TE.appendPlainText('Progress stoped!')
+        elif self.Main_tabs.currentIndex() == 3:
+            if hasattr(self, 'modal_process_thread'):
+                ans = qm.question(self, "Stop Process", "Are you sure you want to stop the process?", \
+                    buttons=qm.StandardButtons(qm.Yes | qm.No), defaultButton=qm.No)
+                if ans == qm.No:
+                    return
+                self.modal_process_thread.quit()
+                self.mdl_progress_PBar.setValue(0)
+                self.mdl_start_PB.setEnabled(True)
+                self.mdl_progress_TE.appendPlainText('Progress Stoped!')
 
 
 class ModalProcessThread(QThread):
@@ -578,12 +541,14 @@ class ModalProcessThread(QThread):
     progressbar_sig = Signal(int)
 
     def run(self):
-        for experiment in self.exp['exp'].split(','):
-            for run in self.exp['run'].split(','):
-                experiment = experiment.strip()
-                run = run.strip()
-                path = os.path.join(self.exp['dir'], experiment, run, 'Analysis')
-                self.progresstext_sig.emit(f'modal analysis: {experiment}\{run}')
+        experiments = glob.glob(os.path.join(self.exp['dir'], self.exp['exp']))
+        experiments.sort()
+        for experiment in experiments:
+            runs = glob.glob(os.path.join(experiment, self.exp['run']))
+            runs.sort()
+            for run in runs:
+                path = os.path.join(run, 'Analysis')
+                self.progresstext_sig.emit(f'modal analysis: {run}')
                 modal_analysis = modal.ModalAnalysis(path, nfiles=int(self.exp['nf']), pattern=self.exp['pat'])
                 if self.analysis['st'] == 'True':
                     if self.analysis['mt'] == 'Singular Value Decomposition':
@@ -604,28 +569,41 @@ class PIVProcessThread(QThread):
         super(PIVProcessThread, self).__init__()
         self.exp, self.pre, self.pro, self.pos = exp, pre, pro, pos
         self.processed_files = processed_files
+        self.stop = False
+        self.stop_timer = QTimer(self)
+        self.stop_timer.timeout.connect(self.stopProcess)
+        self.stop_timer.start(500)
         
     progress_sig = Signal(str)  #signals have to be defined as class variables
 
     def run(self):
-        for experiment in self.exp['exp'].split(','):
-            for run in self.exp['run'].split(','):
+        experiments = glob.glob(os.path.join(self.exp['dir'], self.exp['exp']))
+        experiments.sort()
+        for experiment in experiments:
+            runs = glob.glob(os.path.join(experiment, self.exp['run']))
+            runs.sort()
+            for run in runs:
                 
                 # prepare data directories
-                experiment, run = experiment.strip(), run.strip()
-                run_path = os.path.join(self.exp['dir'], experiment, run)
-                analysis_path = tools.create_directory(run_path)                #creates the Analysis folder if not already there
+                analysis_path = tools.create_directory(run)                #creates the Analysis folder if not already there
                 tools.create_directory(analysis_path, folder='Unvalidated')     #creates the Unvalidated folder if not already there
-                data_dir = os.path.join(run_path, 'RawData')
+                data_dir = os.path.join(run, 'RawData')
                 
                 # preprocess
-                self.progress_sig.emit(f'Processing run: {experiment} / {run}')
+                self.progress_sig.emit(f'Processing run: {run} ')
                 task = tools.Multiprocesser( data_dir=data_dir, pattern_a=self.exp['patA'], pattern_b=self.exp['patB'] )
                 if self.pre['bg_st'] == 'True':
-                    self.progress_sig.emit('finding background...')
-                    background_a, background_b = task.find_background(n_files=int(self.pre['bg_nf']), chunk_size=int(self.pre['bg_cs']), n_cpus=int(self.pre['bg_nc']))
-                    imsave(os.path.join(analysis_path, 'background_a.TIF'), background_a)
-                    imsave(os.path.join(analysis_path, 'background_b.TIF'), background_b)
+                    bga_file = os.path.join(analysis_path, 'background_a.TIF')
+                    bgb_file = os.path.join(analysis_path, 'background_b.TIF')
+                    if ( os.path.exists(bga_file) and os.path.exists(bgb_file) ):
+                        self.progress_sig.emit('using existing background files...')
+                        background_a = tools.imread(bga_file)
+                        background_b = tools.imread(bgb_file)
+                    else:
+                        self.progress_sig.emit('finding background...')
+                        background_a, background_b = task.find_background2(n_files=int(self.pre['bg_nf']))
+                        imsave(os.path.join(analysis_path, 'background_a.TIF'), background_a)
+                        imsave(os.path.join(analysis_path, 'background_b.TIF'), background_b)
                 else:
                     background_a, background_b = None, None
                 
@@ -676,6 +654,12 @@ class PIVProcessThread(QThread):
                         tools.save( x, y, filename=fname, variables=[u[:,:,n], v[:,:,n], mask[:,:,n], vor[:,:,n], velMag[:,:,n], up[:,:,n], vp[:,:,n], upvp[:,:,n], TKE[:,:,n]], header=header )
                 
         return True
+
+    #does not work as intended (timer event is ignored because the program is busy running the 'task.run' function)
+    def stopProcess(self):
+        if self.stop == True:
+            self.quit()
+            print('trying to quit...')
 
 
 def mainPIVProcess( args, bga, bgb, pro, pos, processed_files):
@@ -738,22 +722,7 @@ def mainPIVProcess( args, bga, bgb, pro, pos, processed_files):
     else:
         basename = os.path.basename(save_path)
         return basename, u, v, mask, vor, velMag
-
        
-
-def simpleProcess( args, processed_files, WS, OL, DT, SA, S2N):
-    # unpacking the arguments
-    file_a, file_b, counter = args
-    # read images into numpy arrays
-    frame_a  = tools.imread( file_a )
-    frame_b  = tools.imread( file_b )
-    # process image pair with piv algorithm.
-    u, v, sig2noise = pyprocess.extended_search_area_piv( frame_a, frame_b, \
-        window_size=WS, overlap=OL, dt=DT, search_area_size=SA, sig2noise_method=S2N)
-    x, y = pyprocess.get_coordinates( image_size=frame_a.shape, window_size=WS, overlap=OL )
-    save_path = tools.create_path(file_a, folder='Analysis')
-    tools.save(x, y, u, v, sig2noise, save_path+'_unvalidated.dat')
-    processed_files.append(save_path+'.dat')
 
 
 if __name__ == "__main__":

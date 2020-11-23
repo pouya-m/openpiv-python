@@ -690,7 +690,7 @@ def find_secondary_displacement(corr, subpixel_method='gaussian',sig2noise_metho
     # use the masked array to find the secondary displacement and sig2noise ratio
     row, col = find_subpixel_peak_position(tmp, subpixel_method=subpixel_method)
     if sig2noise_method is not None:
-        s2n = sig2noise_ratio(temp, sig2noise_method=sig2noise_method, width=width)
+        s2n = sig2noise_ratio(tmp, sig2noise_method=sig2noise_method, width=width)
         #s2n = -1
         return row, col, s2n
     else:

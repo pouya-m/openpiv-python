@@ -1,0 +1,14 @@
+QGroupBox {
+    border: 1px solid rgb(200,200,200);
+	border-radius: 6px;
+    margin-top: 12px;
+}
+
+QGroupBox::title {
+    color: rgb(200,200,200);
+	subcontrol-position: top left;
+    subcontrol-origin: margin;
+    left: 12px;
+	padding: 0px 5px 0px 5px;
+
+}
