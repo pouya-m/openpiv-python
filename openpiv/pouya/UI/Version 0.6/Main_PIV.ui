@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>836</width>
+    <width>827</width>
     <height>736</height>
    </rect>
   </property>
@@ -64,7 +64,7 @@
        <enum>QTabWidget::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>1</number>
       </property>
       <property name="elideMode">
        <enum>Qt::ElideNone</enum>
@@ -742,7 +742,7 @@
               <enum>QFrame::Raised</enum>
              </property>
              <property name="currentIndex">
-              <number>0</number>
+              <number>1</number>
              </property>
              <property name="tabSpacing">
               <number>4</number>
@@ -800,7 +800,7 @@
                     <string/>
                    </property>
                    <property name="placeholderText">
-                    <string>experiments naming pattern</string>
+                    <string>Experiments separated by a comma (,)</string>
                    </property>
                   </widget>
                  </item>
@@ -817,7 +817,7 @@
                     <string/>
                    </property>
                    <property name="placeholderText">
-                    <string>runs naming pattern</string>
+                    <string>Runs separated by a comma (,)</string>
                    </property>
                   </widget>
                  </item>
@@ -889,8 +889,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>316</width>
-                <height>75</height>
+                <width>789</width>
+                <height>318</height>
                </rect>
               </property>
               <attribute name="label">
@@ -1456,500 +1456,24 @@
        <attribute name="title">
         <string>Freq. Analysis</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_3">
-        <item>
-         <widget class="QGroupBox" name="freq_exp_GB">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-            <horstretch>2</horstretch>
-            <verstretch>2</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="title">
-           <string>Experiment</string>
-          </property>
-          <layout class="QGridLayout" name="gridLayout_23">
-           <property name="horizontalSpacing">
-            <number>20</number>
-           </property>
-           <property name="verticalSpacing">
-            <number>5</number>
-           </property>
-           <item row="1" column="0">
-            <widget class="QLabel" name="label_30">
-             <property name="text">
-              <string>Directory</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="label_31">
-             <property name="text">
-              <string>Experiments</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="1">
-            <widget class="QLineEdit" name="freq_exp_LE">
-             <property name="text">
-              <string/>
-             </property>
-             <property name="placeholderText">
-              <string>experiments naming pattern</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="2">
-            <widget class="QLabel" name="label_32">
-             <property name="text">
-              <string>Runs</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="0">
-            <widget class="QLabel" name="label_13">
-             <property name="text">
-              <string>Pattern</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="1">
-            <widget class="QLineEdit" name="freq_pat_LE">
-             <property name="placeholderText">
-              <string>files naming pattern</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="2">
-            <widget class="QLabel" name="label_33">
-             <property name="text">
-              <string>Num. of Files</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QLineEdit" name="freq_dir_LE">
-             <property name="text">
-              <string/>
-             </property>
-             <property name="placeholderText">
-              <string>path to the experiment directory</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="2">
-            <widget class="QToolButton" name="freq_dir_TB">
-             <property name="text">
-              <string>...</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="3">
-            <widget class="QLineEdit" name="freq_nf_LE">
-             <property name="placeholderText">
-              <string>number of files to use</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="3">
-            <widget class="QLineEdit" name="freq_run_LE">
-             <property name="text">
-              <string/>
-             </property>
-             <property name="placeholderText">
-              <string>runs naming pattern</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="0" colspan="4">
-            <widget class="QPushButton" name="freq_load_from_PB">
-             <property name="text">
-              <string>Load Experiment Settings From The Process Tab</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item>
-         <widget class="QGroupBox" name="freq_analysis_GB">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-            <horstretch>3</horstretch>
-            <verstretch>3</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="title">
-           <string>Analysis</string>
-          </property>
-          <layout class="QGridLayout" name="gridLayout_29">
-           <property name="bottomMargin">
-            <number>2</number>
-           </property>
-           <item row="0" column="0">
-            <widget class="QLabel" name="label_36">
-             <property name="text">
-              <string>Acquisition Frequency</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1" colspan="2">
-            <widget class="QLineEdit" name="freq_fs_LE">
-             <property name="placeholderText">
-              <string>fs</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="3">
-            <widget class="QLabel" name="label_37">
-             <property name="text">
-              <string>Dimension Factor</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="4">
-            <widget class="QLineEdit" name="freq_dim_LE">
-             <property name="placeholderText">
-              <string>St=f*(dim_factor)</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="5">
-            <widget class="QLabel" name="label_38">
-             <property name="text">
-              <string>Frequency Limit</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="6">
-            <widget class="QLineEdit" name="freq_flim_LE">
-             <property name="text">
-              <string/>
-             </property>
-             <property name="placeholderText">
-              <string>highest frequency</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QCheckBox" name="freq_pt_fft_CB">
-             <property name="text">
-              <string>Perform Point FFT</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QCheckBox" name="freq_pt_stft_CB">
-             <property name="text">
-              <string>Perform Point STFT</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="0">
-            <widget class="QCheckBox" name="freq_gb_fft_CB">
-             <property name="text">
-              <string>Perform Global FFT</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="0">
-            <widget class="QCheckBox" name="freq_gb_stft_CB">
-             <property name="text">
-              <string>Perform Global STFT</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="1" rowspan="2" colspan="6">
-            <widget class="QGroupBox" name="groupBox_3">
-             <property name="title">
-              <string>STFT</string>
-             </property>
-             <layout class="QGridLayout" name="gridLayout_31">
-              <property name="topMargin">
-               <number>10</number>
-              </property>
-              <property name="bottomMargin">
-               <number>2</number>
-              </property>
-              <item row="0" column="0">
-               <widget class="QLabel" name="label_39">
-                <property name="text">
-                 <string>Data per Segment</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="2">
-               <widget class="QLabel" name="label_40">
-                <property name="text">
-                 <string>Overlap</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="3">
-               <widget class="QLineEdit" name="freq_noverlap_LE">
-                <property name="placeholderText">
-                 <string>overlap</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="1">
-               <widget class="QLineEdit" name="freq_nperseg_LE">
-                <property name="placeholderText">
-                 <string>num. per segment</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </item>
-           <item row="1" column="1" rowspan="2" colspan="6">
-            <widget class="QGroupBox" name="groupBox_2">
-             <property name="title">
-              <string>Point Location</string>
-             </property>
-             <layout class="QGridLayout" name="gridLayout_30">
-              <property name="topMargin">
-               <number>10</number>
-              </property>
-              <property name="bottomMargin">
-               <number>2</number>
-              </property>
-              <item row="0" column="0">
-               <widget class="QLabel" name="label_41">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="text">
-                 <string>Mode            </string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="1">
-               <widget class="QComboBox" name="freq_pt_loc_CB">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <item>
-                 <property name="text">
-                  <string>Max Global Su</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Max Global Sv</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Specified Point</string>
-                 </property>
-                </item>
-               </widget>
-              </item>
-              <item row="0" column="2">
-               <widget class="QLineEdit" name="freq_pt_loc_LE">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="placeholderText">
-                 <string>x, y</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item>
-         <widget class="QFrame" name="frame">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="frameShape">
-           <enum>QFrame::StyledPanel</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Raised</enum>
-          </property>
-          <layout class="QGridLayout" name="gridLayout_32">
-           <property name="leftMargin">
-            <number>0</number>
-           </property>
-           <property name="topMargin">
-            <number>0</number>
-           </property>
-           <property name="rightMargin">
-            <number>0</number>
-           </property>
-           <property name="bottomMargin">
-            <number>0</number>
-           </property>
-           <item row="0" column="0">
-            <spacer name="horizontalSpacer_4">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>590</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item row="0" column="1">
-            <widget class="QPushButton" name="freq_load_PB">
-             <property name="text">
-              <string>Load Settings</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="2">
-            <widget class="QPushButton" name="freq_save_PB">
-             <property name="text">
-              <string>Save Settings</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item>
-         <widget class="QGroupBox" name="freq_run_GB">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-            <horstretch>2</horstretch>
-            <verstretch>2</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="title">
-           <string>Run</string>
-          </property>
-          <layout class="QGridLayout" name="gridLayout_24">
-           <item row="0" column="0">
-            <layout class="QGridLayout" name="gridLayout_28">
-             <property name="horizontalSpacing">
-              <number>15</number>
-             </property>
-             <property name="verticalSpacing">
-              <number>12</number>
-             </property>
-             <item row="1" column="0">
-              <widget class="QLabel" name="label_34">
-               <property name="text">
-                <string>Run Progress</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="2">
-              <widget class="QPushButton" name="freq_start_PB">
-               <property name="enabled">
-                <bool>true</bool>
-               </property>
-               <property name="styleSheet">
-                <string notr="true"/>
-               </property>
-               <property name="text">
-                <string>Start</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="3">
-              <widget class="QPushButton" name="freq_stop_PB">
-               <property name="enabled">
-                <bool>true</bool>
-               </property>
-               <property name="text">
-                <string>Stop</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="1" colspan="3">
-              <widget class="QProgressBar" name="freq_progress_PBar">
-               <property name="enabled">
-                <bool>false</bool>
-               </property>
-               <property name="styleSheet">
-                <string notr="true"/>
-               </property>
-               <property name="value">
-                <number>0</number>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="0">
-              <widget class="QLabel" name="label_35">
-               <property name="text">
-                <string>Progress</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="1">
-              <widget class="QPlainTextEdit" name="freq_progress_TE">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="maximumSize">
-                <size>
-                 <width>16777215</width>
-                 <height>80</height>
-                </size>
-               </property>
-               <property name="layoutDirection">
-                <enum>Qt::LeftToRight</enum>
-               </property>
-               <property name="frameShape">
-                <enum>QFrame::StyledPanel</enum>
-               </property>
-               <property name="midLineWidth">
-                <number>3</number>
-               </property>
-               <property name="horizontalScrollBarPolicy">
-                <enum>Qt::ScrollBarAsNeeded</enum>
-               </property>
-               <property name="tabChangesFocus">
-                <bool>true</bool>
-               </property>
-               <property name="undoRedoEnabled">
-                <bool>false</bool>
-               </property>
-               <property name="readOnly">
-                <bool>true</bool>
-               </property>
-               <property name="textInteractionFlags">
-                <set>Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
-               </property>
-               <property name="centerOnScroll">
-                <bool>true</bool>
-               </property>
-               <property name="placeholderText">
-                <string>Details of the run are shown here...</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-          </layout>
-         </widget>
-        </item>
-       </layout>
+       <widget class="QLabel" name="label_13">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>20</y>
+          <width>471</width>
+          <height>22</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>This part of the program is still under development.</string>
+        </property>
+       </widget>
       </widget>
       <widget class="QWidget" name="ModalAnalysis">
        <attribute name="title">
@@ -2022,7 +1546,7 @@
              <item row="0" column="0">
               <widget class="QCheckBox" name="mdl_st_CB">
                <property name="text">
-                <string>Run Modal Analysis</string>
+                <string>Run Analysis</string>
                </property>
               </widget>
              </item>
@@ -2222,7 +1746,7 @@
               <string/>
              </property>
              <property name="placeholderText">
-              <string>experiments naming pattern</string>
+              <string>Experiments separated by a comma (,)</string>
              </property>
             </widget>
            </item>
@@ -2243,7 +1767,7 @@
            <item row="3" column="1">
             <widget class="QLineEdit" name="mdl_pat_LE">
              <property name="placeholderText">
-              <string>files naming pattern</string>
+              <string>Pattern for files</string>
              </property>
             </widget>
            </item>
@@ -2260,7 +1784,7 @@
               <string/>
              </property>
              <property name="placeholderText">
-              <string>path to the experiment directory</string>
+              <string>Path to the experiment directory</string>
              </property>
             </widget>
            </item>
@@ -2284,7 +1808,7 @@
               <string/>
              </property>
              <property name="placeholderText">
-              <string>runs naming pattern</string>
+              <string>Runs separated by a comma (,)</string>
              </property>
             </widget>
            </item>
@@ -2316,7 +1840,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>836</width>
+     <width>827</width>
      <height>21</height>
     </rect>
    </property>

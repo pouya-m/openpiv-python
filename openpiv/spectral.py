@@ -8,14 +8,17 @@
 # - code refracted and wrapped into a neat analysis object
 # - added frequency limit for saved results to keep the output cleaner
 # - more efficient data reads (prevent reading the data files multiple times, instead the data is kept in memory)
+# - added functions to load and save setting files and logic to run analysis based on this settings
 
 # To do:
-# - add ensemble averaging
-# - add functions to load and save setting files
+# - add ensemble averaging for fft
+
 
 import numpy as np
 import scipy.signal as signal
 import os, glob, time
+from collections import OrderedDict
+from configparser import ConfigParser
 import matplotlib.pyplot as plt
 
 
@@ -54,6 +57,7 @@ class FrequencyAnalysis():
         if os.path.isdir(self.dir) == False:
             os.mkdir(self.dir)
 
+
     def point_fft(self, u, v):
         """perfomrs FFT for a single point in the flow, saves the results
         and returns frequency and spectral amplitude 
@@ -80,6 +84,7 @@ class FrequencyAnalysis():
         self.saveData(mode='point_fft', St=St, Su=Su, Sv=Sv)
         
         return St, Su, Sv
+
 
     def point_stft(self, u, v, nperseg, noverlap):
         """ performs short-time fft for a single point in the flow, saves the results
@@ -121,6 +126,7 @@ class FrequencyAnalysis():
         self.saveData(mode='point_stft', t=t, St=St, Su=Su, Sv=Sv)
         
         return t, St, Su, Sv
+
 
     def global_fft(self, flim, velocity=None):
         """ performs the global Autospectral density (GAS) analysis for velocity data, saves the results
@@ -175,20 +181,19 @@ class FrequencyAnalysis():
         for i in range(nxy):
             Su = abs(np.fft.rfft(velocity[i,0,:])*2/self.N)
             Sv = abs(np.fft.rfft(velocity[i,1,:])*2/self.N)
+            Su = Su[0:nfreq]
+            Sv = Sv[0:nfreq]
             Su[0] = Sv[0] = 0   #first value gets thrown out
-            Su_map[i, 2:] = Su[0:nfreq]
+            Su_map[i, 2:] = Su
             Su_max[i, 3] = np.amax(Su)
             Su_max[i, 2] = St[np.argmax(Su)]
-            Sv_map[i, 2:] = Sv[0:nfreq]
+            Sv_map[i, 2:] = Sv
             Sv_max[i, 3] = np.amax(Sv)
             Sv_max[i, 2] = St[np.argmax(Sv)]
         #saving the results
         self.saveData(mode='global_fft', Su_max=Su_max, Su_map=Su_map, Sv_max=Sv_max, Sv_map=Sv_map, St=St)
         
         return Su_max, Su_map, Sv_max, Sv_map, St
-
-
-
 
 
     def global_stft(self, nperseg, noverlap, flim, velocity=None):
@@ -218,12 +223,8 @@ class FrequencyAnalysis():
         #saving the results
         self.saveData(mode='global_stft', t=t, St=St, Su_map=Su_map, Sv_map=Sv_map)
 
-        return t, St, Su, Sv
+        return t[0:nfreq], St, Su_map, Sv_map
 
-
-
-
-        
 
     def getPointVelocity(self, gx, gy, velocity=None):
         self.gx, self.gy = gx, gy
@@ -244,6 +245,7 @@ class FrequencyAnalysis():
             v = velocity[ind,1,:]
 
         return u, v
+
 
     def getGlobalVelocity(self):
         sample = np.loadtxt(self.file_list[0], skiprows=1)
@@ -269,9 +271,9 @@ class FrequencyAnalysis():
             out_u = np.vstack([t_mesh.ravel(), St_mesh.ravel(), Su.ravel(), Su.ravel()/np.max(Su)])
             out_v = np.vstack([t_mesh.ravel(), St_mesh.ravel(), Sv.ravel(), Sv.ravel()/np.max(Sv)])
             headerline = f'TITLE="U_short_time_fft Point=({self.gx},{self.gy})" VARIABLES="t", "St", "Su", "Su_nondim" ZONE I={t.size}, J={St.size}'
-            np.savetxt(os.path.join(self.dir, f'U_short_time_fft_Point ({self.gx},{self.gy}).dat'), out_u.T, fmt='%8.4f', delimiter='\t', header=headerline, comments='')
+            np.savetxt(os.path.join(self.dir, f'U_stft_Point ({self.gx},{self.gy}).dat'), out_u.T, fmt='%8.4f', delimiter='\t', header=headerline, comments='')
             headerline = f'TITLE="V_short_time_fft Point=({self.gx},{self.gy})" VARIABLES="t", "St", "Sv", "Sv_nondim" ZONE I={t.size}, J={St.size}'
-            np.savetxt(os.path.join(self.dir, f'V_short_time_fft_Point ({self.gx},{self.gy}).dat'), out_v.T, fmt='%8.4f', delimiter='\t', header=headerline, comments='')
+            np.savetxt(os.path.join(self.dir, f'V_stft_Point ({self.gx},{self.gy}).dat'), out_v.T, fmt='%8.4f', delimiter='\t', header=headerline, comments='')
             return
 
         sample = np.loadtxt(self.file_list[0], skiprows=1)
@@ -309,26 +311,81 @@ class FrequencyAnalysis():
                 headerline += f' ZONE I={nx}, J={ny}'
                 np.savetxt(os.path.join(self.dir, f'Global_Sv_map_t{t:0.3}.dat') , Sv_map[:,:,i], fmt='%8.4f', delimiter='\t', header=headerline, comments='')
             return
+    
 
+    @staticmethod
+    def saveSettings(exp, analysis, stg_file):
+        settings = ConfigParser()
+        settings['Experiment'] = exp
+        settings['Analysis'] = analysis
+        with open(stg_file, 'w') as fl:
+            fl.write('# Spectral Analysis Settings:\n\n')
+            settings.write(fl)
+
+    @staticmethod
+    def loadSettings(stg_file):
+        settings = ConfigParser()
+        settings.read(stg_file)
+        
+        return settings['Experiment'], settings['Analysis']
+        
 
 
 #code to test functions
 if __name__ == "__main__":
     
+    exp, analysis = OrderedDict(), OrderedDict()
+    exp, analysis = FrequencyAnalysis.loadSettings('E:\Temp\Re11_medium\Frequency_sttings.ini')
     t1 = time.time()
-    path = r'E:\Temp\Re11_medium\theta180deg\Analysis'
-    print('init...')
-    analysis = FrequencyAnalysis(path, 1000, '*00????.dat', fs=14.5, dim=0.26737)
-    print('read...')
-    #u, v = analysis.getPointVelocity(55.5205, 89.1693)
-    velocity = analysis.getGlobalVelocity()
-    print('calc...')
-    #analysis.global_fft(flim=1, velocity=velocity)
-    analysis.global_stft(nperseg=64, noverlap=56, flim=1, velocity=velocity)
-    #point_stft(file_list, gx=64, gy=16, nperseg=16, noverlap=10, fs=10)
-    print(f'frequency analysis finished in {time.time()-t1} sec')
-    # plt.imshow(Su, cmap='hot', interpolation='spline16', origin='lower')
-    # plt.plot(St, Su)
-    # plt.show()
-    
 
+    experiments = glob.glob(os.path.join(exp['dir'], exp['exp']))
+    for experiment in experiments:
+        runs = glob.glob(os.path.join(experiment, exp['run']))
+        for run in runs:
+            path = os.path.join(run, 'Analysis')
+            print('initializing...')
+            spectral = FrequencyAnalysis(path, int(exp['nf']), exp['pat'], fs=float(analysis['fs']), dim=float(analysis['dim']))
+            velocity = None
+
+            if eval(analysis['gb_fft']) or eval(analysis['gb_stft']):
+                print('reading velocity...')
+                velocity = spectral.getGlobalVelocity()
+                if eval(analysis['gb_fft']):
+                    print('runing global fft...')
+                    spectral.global_fft(flim=float(analysis['flim']), velocity=velocity)
+                if eval(analysis['gb_stft']):
+                    print('runing global stft...')
+                    spectral.global_stft(nperseg=int(analysis['nperseg']), noverlap=int(analysis['noverlap']), flim=float(analysis['flim']), velocity=velocity)
+            
+            if eval(analysis['pt_fft']) or eval(analysis['pt_stft']):
+                print('getting u, v values...')
+                if analysis['pt_mode'] == 'specified point':
+                    gx, gy = map(float, analysis['pt'].split(','))
+                elif analysis['pt_mode'] == 'Max Global Su':
+                    fname = os.path.join(path, 'Frequency Analysis', 'Global_Su_max.dat')
+                    if os.path.exists(fname):
+                        data = np.loadtxt(fname, skiprows=1)
+                        amax = np.argmax(data[:,3])
+                        gx, gy = data[amax,0], data[amax,1]
+                    else:
+                        print('No Su data found! skiped, point spectra was not calculated.')
+                        gx, gy = None, None       
+                elif analysis['pt_mode'] == 'Sv_max':
+                    fname = os.path.join(path, 'Frequency Analysis', 'Global_Sv_max.dat')
+                    if os.path.exists(fname):
+                        data = np.loadtxt(fname, skiprows=1)
+                        amax = np.argmax(data[:,3])
+                        gx, gy = data[amax,0], data[amax,1]
+                    else:
+                        print('No Sv data found! skiped, point spectra was not calculated.')
+                        gx, gy = None, None
+                if gy is not None:
+                    u, v = spectral.getPointVelocity(gx, gy, velocity=velocity)
+                    if eval(analysis['pt_fft']):
+                        print('runing point fft...')
+                        spectral.point_fft(u, v)
+                    if eval(analysis['pt_stft']):
+                        print('runing point stft...')
+                        spectral.point_stft(u, v, nperseg=analysis['nperseg'], noverlap=analysis['noverlap'])
+
+    print(f'frequency analysis finished in {time.time()-t1} sec')

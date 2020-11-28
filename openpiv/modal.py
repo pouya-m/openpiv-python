@@ -2,11 +2,17 @@
 # By: Pouya Mohtat
 # Sep 2020
 
+# This script assumes the data grid to be uniform. If data spacing is not uniform then 'weights' should be included in 
+# the data matrix to account for the grid volume at each point...
+
+
 import os, glob, warnings, time
 import numpy as np
 import matplotlib.pyplot as plt
 from openpiv import tools
-import random
+from collections import OrderedDict
+from configparser import ConfigParser
+#import random
 
 
 class ModalAnalysis():
@@ -43,7 +49,7 @@ class ModalAnalysis():
         #find singular values and sort them
         A = self.constructDataMatrix()
         u, w, vh = np.linalg.svd(A, full_matrices=False)
-        w, u, p = self.sortEignvalues(w, u)
+        w, u, p = self.sortEignvalues(w**2, u)
         #calculate the coefficients
         if nmode != 'all':
             u = u[:,0:nmode]
@@ -77,7 +83,7 @@ class ModalAnalysis():
         C = np.matmul(A.T, A)
         w, v = np.linalg.eig(C)
         #sort the modes (use sqrt(w) to get power levels reflecting values for matrix A instead of C)
-        w, v , p = self.sortEignvalues(np.sqrt(w), v)
+        w, v , p = self.sortEignvalues(w, v)
         #calculate the eign vectors of A
         if nmode == 'all':
             nmode = A.shape[1]    
@@ -99,8 +105,8 @@ class ModalAnalysis():
         #loop to read all files and collect data matrix
         for i in range(self.N):
             data = np.loadtxt(self.file_list[i], skiprows=1)
-            A[0:self.M//2, i] = data[:, 2]
-            A[self.M//2:self.M, i] = data[:, 3]
+            A[0:self.M//2, i] = data[:, 7]          # 7th column is u'
+            A[self.M//2:self.M, i] = data[:, 8]     # 8th column is v'
 
         return A
 
@@ -114,7 +120,7 @@ class ModalAnalysis():
         u_sorted = np.zeros(u.shape)
         for i, arg in enumerate (arg_sort):
             u_sorted[:,i] = u[:,arg]
-        p = (w_sorted**2)*100/np.sum(w_sorted**2)
+        p = w_sorted*100/np.sum(w_sorted)
         
         return w_sorted, u_sorted, p
 
@@ -212,43 +218,21 @@ class ModalAnalysis():
                 np.savetxt(os.path.join(self.dir, f'ReconstructedField{i+1:06}.dat'), A_rr, fmt='%8.4f', delimiter='\t', header=headerline, comments='')
 
     @staticmethod
-    def saveSettings(exp, analysis, reconst, stg_file):
-        with open(stg_file, 'w') as fh:
-            fh.write('Modal analysis settings:\n')
-            fh.write('\nexperiment:\n')
-            fh.write('\t{0:<30};{1}\n'.format('directory:', exp['dir']))
-            fh.write('\t{0:<30};{1}\n'.format('exp::', exp['exp']))
-            fh.write('\t{0:<30};{1}\n'.format('run:', exp['run']))
-            fh.write('\t{0:<30};{1:<30};{2}\n'.format('files:', exp['pat'], exp['nf']))
-            fh.write('\nAnalysis:\n')
-            fh.write('\t{0:<30};{1}\n'.format('state:', analysis['st']))
-            fh.write('\t{0:<30};{1}\n'.format('method:', analysis['mt']))
-            fh.write('\t{0:<30};{1}\n'.format('number of modes:', analysis['nm']))
-            fh.write('\nReconstruction:\n')
-            fh.write('\t{0:<30};{1}\n'.format('state:', reconst['st']))
-            fh.write('\t{0:<30};{1}\n'.format('number of modes:', reconst['nm']))
-            fh.write('\t{0:<30};{1}\n'.format('number of snapshots:', reconst['ns']))
+    def saveSettings(exp, analysis, rec, stg_file):
+        settings = ConfigParser()
+        settings['Experiment'] = exp
+        settings['Analysis'] = analysis
+        settings['Reconstruction'] = rec
+        with open(stg_file, 'w') as fl:
+            fl.write('# Modal Analysis Settings:\n\n')
+            settings.write(fl)
 
     @staticmethod
     def loadSettings(stg_file):
-        lines = []
-        with open(stg_file, 'r') as fh:
-            for line in fh:
-                lines.append(line[:-1])
-        #extract and set values
-        exp, analysis, reconst = {}, {}, {}
-        *_, exp['dir'] = lines[3].split(';')
-        *_, exp['exp'] = lines[4].split(';')
-        *_, exp['run'] = lines[5].split(';')
-        *_, exp['pat'], exp['nf'] = [lines[6].split(';')[i].strip() for i in range(3)]
-        *_, analysis['st'] = lines[9].split(';')
-        *_, analysis['mt'] = lines[10].split(';')
-        *_, analysis['nm'] = lines[11].split(';')
-        *_, reconst['st'] = lines[14].split(';')
-        *_, reconst['nm'] = lines[15].split(';')
-        *_, reconst['ns'] = lines[16].split(';')
-
-        return exp, analysis, reconst
+        settings = ConfigParser()
+        settings.read(stg_file)
+        
+        return settings['Experiment'], settings['Analysis'], settings['Reconstruction']
 
 
 
@@ -258,7 +242,8 @@ if __name__ == "__main__":
     t1 = time.time()
 
     stg_file = r'E:\Temp\Re11_medium\Modal_Settings.dat'
-    exp, analysis, reconst = ModalAnalysis.loadSettings(stg_file)
+    exp, analysis, rec = OrderedDict(), OrderedDict(), OrderedDict()
+    exp, analysis, rec = ModalAnalysis.loadSettings(stg_file)
     for experiment in exp['exp'].split(','):
         for run in exp['run'].split(','):
             experiment = experiment.strip()

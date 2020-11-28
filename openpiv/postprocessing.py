@@ -18,6 +18,8 @@ import matplotlib.pyplot as plt
 import os, glob
 import multiprocessing
 from functools import partial
+from collections import OrderedDict
+from configparser import ConfigParser
 
 
 def vorticity(u,v,x,y):
@@ -230,59 +232,23 @@ def extendedOutput(file_list, pro, pos):
 def saveSettings(exp, pre, pro, pos, file_name):
     """Saves the settings given in exp, pre, pro and pos dictionaries to the file_name
     """
-    with open(file_name, 'w') as fh:
-        fh.write('Process settings:\n\n')
-        fh.write('Experiment:\n\t{0:<30};'.format('Directory:'))
-        fh.write('{0}\n\t{1:<30};{2}\n\t{3:<30};{4}\n'.format(exp['dir'], 'Experiments:', exp['exp'], 'Runs:', exp['run']))
-        fh.write('\t{0:<30};{1:<15};{2:<15};{3:<15}\n\n'.format('Files:', exp['patA'], exp['patB'], exp['nf']))
-        fh.write('Pre-Process:\n\t{0:<30};{1:<15};{2:<15}\n'.format('Remove Background:', pre['bg_st'], pre['bg_nf']))
-        fh.write('\t{0:<30};{1:<15};{2:<15}\n'.format('Static Mask:', pre['sm_st'], pre['sm_pa']))
-        fh.write('\t{0:<30};{1:<15}\n\n'.format('Dynamic Mask:', pre['dm_st']))
-        fh.write('Process:\n\t{0:<30};{1:<15}\n\t{2:<30};{3:<15}\n\t{4:<30};{5:<15}\n'.format('Window Size:', pro['ws'], 'Search Area Size:', pro['sa'], 'Overlap:', pro['ol']))
-        fh.write('\t{0:<30};{1:<15}\n\t{2:<30};{3:<15}\n\t{4:<30};{5:<15}\n'.format('Signal/Noise Method:', pro['s2n'], 'Time Step:', pro['ts'], 'Scale:', pro['sc']))
-        fh.write('\t{0:<30};{1:<15}\n\n'.format('Number of CPUs:', pro['nc']))
-        fh.write('Post-process:\n\t{0:<30};{1:<15};{2:<15}\n'.format('Signal/Noise:', pos['s2n_st'], pos['s2n_ra']))
-        fh.write('\t{0:<30};{1:<15};{2:<15};{3:<15}\n'.format('Global Velocity:', pos['gv_st'], pos['gv_ul'], pos['gv_vl']))
-        fh.write('\t{0:<30};{1:<15};{2:<15}\n'.format('Global Standard Deviation:', pos['std_st'], pos['std_ra']))
-        fh.write('\t{0:<30};{1:<15};{2:<15};{3:<15}\n'.format('Local Velocity:', pos['lv_st'], pos['lv_df'], pos['lv_kr']))
-        fh.write('\t{0:<30};{1:<15};{2:<15};{3:<15};{4:<15}\n'.format('Bad Vector Replacement:', pos['bv_st'], pos['bv_mt'], pos['bv_ni'], pos['bv_kr']))
-        fh.write('\t{0:<30};{1:<15};{2:<15}\n\t{3:<30};{4:<15};{5:<15}\n'.format('Vector Smoothing:', pos['sm_st'], pos['sm_ra'], 'Field Manipulation:', pos['fm_st'], pos['fm_in']))
-        fh.write('\t{0:<30};{1:<15}\n'.format('Output Mode:', pos['out_m']))
+    settings = ConfigParser()
+    settings['Experiment'] = exp
+    settings['Pre-process'] = pre
+    settings['Process'] = pro
+    settings['Post-process'] = pos
+    with open(file_name, 'w') as fl:
+        fl.write('# PIV Process Settings:\n\n')
+        settings.write(fl)
 
 
 def loadSettings(file_name):
     """Loads the settings and returns exp, pre, pro and pos dictionaries
     """
-    lines = []
-    with open(file_name, 'r') as fh:
-        for line in fh:
-            lines.append(line[:-1])
-    #extract and set values
-    exp, pre, pro, pos = {}, {}, {}, {}
-    *_, exp['dir'] = lines[3].split(';')
-    *_, exp['exp'] = lines[4].split(';')
-    *_, exp['run'] = lines[5].split(';')
-    *_, exp['patA'], exp['patB'], exp['nf'] = [lines[6].split(';')[i].strip() for i in range(4)]
-    *_, pre['bg_st'], pre['bg_nf']= [lines[9].split(';')[i].strip() for i in range(3)]
-    *_, pre['sm_st'], pre['sm_pa'] = [lines[10].split(';')[i].strip() for i in range(3)]
-    *_, pre['dm_st'] = [lines[11].split(';')[i].strip() for i in range(2)]
-    *_, pro['ws'] = [lines[14].split(';')[i].strip() for i in range(2)]
-    *_, pro['sa'] = [lines[15].split(';')[i].strip() for i in range(2)]
-    *_, pro['ol'] = [lines[16].split(';')[i].strip() for i in range(2)]
-    *_, pro['s2n'] = [lines[17].split(';')[i].strip() for i in range(2)]
-    *_, pro['ts'] = [lines[18].split(';')[i].strip() for i in range(2)]
-    *_, pro['sc'] = [lines[19].split(';')[i].strip() for i in range(2)]
-    *_, pro['nc'] = [lines[20].split(';')[i].strip() for i in range(2)]
-    *_, pos['s2n_st'], pos['s2n_ra'] = [lines[23].split(';')[i].strip() for i in range(3)]
-    *_, pos['gv_st'], pos['gv_ul'], pos['gv_vl'] = [lines[24].split(';')[i].strip() for i in range(4)]
-    *_, pos['std_st'], pos['std_ra'] = [lines[25].split(';')[i].strip() for i in range(3)]
-    *_, pos['lv_st'], pos['lv_df'], pos['lv_kr'] = [lines[26].split(';')[i].strip() for i in range(4)]
-    *_, pos['bv_st'], pos['bv_mt'], pos['bv_ni'], pos['bv_kr'] = [lines[27].split(';')[i].strip() for i in range(5)]
-    *_, pos['sm_st'], pos['sm_ra'] = [lines[28].split(';')[i].strip() for i in range(3)]
-    *_, pos['fm_st'], pos['fm_in'] = [lines[29].split(';')[i].strip() for i in range(3)]
-    *_, pos['out_m'] = [lines[30].split(';')[i].strip() for i in range(2)]
-
-    return exp, pre, pro, pos
+    settings = ConfigParser()
+    settings.read(file_name)
+    
+    return settings['Experiment'], settings['Pre-process'], settings['Process'], settings['Post-process']
     
 
 # code to test functions
@@ -337,7 +303,8 @@ if __name__ == "__main__":
     pprint.pprint(pos)
     '''
     # test output
-    setting_file = r'E:\Temp\Processing_Settings.dat'
+    setting_file = r'E:\Temp\Processing_Settings.ini'
+    exp, pre, pro , pos = OrderedDict(), OrderedDict(), OrderedDict(), OrderedDict()
     exp, pre, pro, pos = loadSettings(setting_file)
     import time
     t1 = time.time()

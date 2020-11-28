@@ -1,17 +1,21 @@
 # Particle Image Velocimetry GUI
 # By Pouya Mohtat Nov. 2020
 
-# Version 0.7 change log:
-# - spectral analysis tab now active
+# Version 0.6 change log:
+# - Modal analysis tab now active
+# - the filters are uncoupled (u and v are not changed in validation and only the mask is calculated and returned)
 # - the experiment folder addressing is changed and patterns are used instead of single folder names, making the folder addresses more flexible.
-# - setting files changed to .ini format for simpler save and load functions
-# - 'import raw images' dialogue is removed all together. the same functionality can be achieved using the process tab and then importing unvalidated files.
-
+# - code to find background image is vectorized and operates more efficiently and much faster. Also the GUI automatically searches for background files.
+#   if there are in the analysis folder then it uses the existing bg files otherwise it calculates the bg.
+# - 'import raw images' dialogue is removed all together. the same functionality can be achieved using the process tab and then import unvalidated files.
 
 # to do:
-#------------------------------------ 
-# 1- stop buttons don't work at the moment. they should provide a gracefull exit from the current running process.
-#    it's necessary to have a stop flag of some sort to properly exit from the main 'task.run' multiprocessing loop and have all the child processes 
+#------------------------------------
+# 1- local median filter seems to work better with kernal=2 but in some situations it will not catch bad vectors with kernel=2 and we need to specify kernel=1 to catch them.
+#    this should be investigated and possibly we should provide an option to apply multiple median filters back to back or with vector replacement in between. 
+
+# 2- stop buttons don't do anything at the moment. they should provide a gracefull exit from the current running process.
+#    it's necessary to have a stop flag to properly exit from the main 'task.run' multiprocessing loop and have all the child processes 
 #    and workers neatly closed and the resources freed up.
 
 
@@ -19,14 +23,12 @@ from PySide2 import QtWidgets
 from PySide2.QtCore import QThread, Signal, QTimer, Qt
 from PySide2.QtGui import QIcon
 import Main_PIV
-from openpiv import tools, validation, filters, pyprocess, scaling, smoothn, postprocessing, modal, spectral
+from openpiv import tools, validation, filters, pyprocess, scaling, smoothn, postprocessing, modal
 import numpy as np
 import os, sys, glob
 from functools import partial
 import multiprocessing
 from imageio import imsave
-from collections import OrderedDict
-from configparser import ConfigParser
 import styles
 
 import matplotlib
@@ -82,14 +84,6 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
         self.mdl_save_PB.clicked.connect(self.mdlSaveSettings)
         self.mdl_start_PB.clicked.connect(self.mdlStartProcessing)
         self.mdl_stop_PB.clicked.connect(self.stopProcess)
-        # Frequency tab initialization
-        self.freq_load_from_PB.clicked.connect(self.freqLoadFrom)
-        self.freq_dir_TB.clicked.connect(lambda: self.getExpDir(tab='frequency'))
-        self.freq_load_PB.clicked.connect(self.freqLoadSettings)
-        self.freq_save_PB.clicked.connect(self.freqSaveSettings)
-        self.freq_start_PB.clicked.connect(self.freqStartProcessing)
-        self.freq_stop_PB.clicked.connect(self.stopProcess)
-
 
         # Create the maptlotlib FigureCanvas object
         self.valplot = MplCanvas(self, width=5, height=4, dpi=100)
@@ -220,49 +214,54 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
     def saveThrSettings(self):
         #getting the file path
         path, ext = QtWidgets.QFileDialog.getSaveFileName(self, \
-            'Select a location to save the settings', 'Validation_Settings.ini')
+            'Select a location to save the settings', 'Thresholding_Settings.dat')
         if path == '':
             return
         #getting the settings
-        stg = OrderedDict()
-        stg['s2n_state'] = str(self.s2n_CB.isChecked())
-        stg['s2n_ratio'] = self.s2n_LE.text()
-        stg['gv_state'] = str(self.global_velocity_CB.isChecked())
-        stg['gv_ulim'] = self.global_uVelocity_LE.text()
-        stg['gv_vlim'] = self.global_vVelocity_LE.text()
-        stg['lv_state'] = str(self.local_velocity_CB.isChecked())
-        stg['lv_lim'] = self.local_velocity_LE.text()
-        stg['lv_kernel'] = self.local_kernel_LE.text()
-        stg['std_state'] = str(self.global_std_CB.isChecked())
-        stg['std_lim'] = self.global_std_LE.text()
+        s2n_state = str(self.s2n_CB.isChecked())
+        s2n_LE = self.s2n_LE.text()
+        gv_state = str(self.global_velocity_CB.isChecked())
+        gv_LE1 = self.global_uVelocity_LE.text()
+        gv_LE2 = self.global_vVelocity_LE.text()
+        lv_state = str(self.local_velocity_CB.isChecked())
+        lv_LE1 = self.local_velocity_LE.text()
+        lv_LE2 = self.local_kernel_LE.text()
+        gs_state = str(self.global_std_CB.isChecked())
+        gs_LE = self.global_std_LE.text()
         #saving to file
-        settings = ConfigParser()
-        settings['Validation'] = stg
         with open(path, 'w') as fh:
-            fh.write('# Validation settings:\n\n')
-            settings.write(fh)
+            fh.write('Thresholding settings:\n')
+            fh.write('{0:<30};{1:<15};{2:<15}\n'.format('Signal 2 Noise:', s2n_state, s2n_LE))
+            fh.write('{0:<30};{1:<15};{2:<15};{3:<15}\n'.format('Global Velocity:', gv_state, gv_LE1, gv_LE2))
+            fh.write('{0:<30};{1:<15};{2:<15};{3:<15}\n'.format('Local Median:', lv_state, lv_LE1, lv_LE2))
+            fh.write('{0:<30};{1:<15};{2:<15}\n'.format('Global Std. Deviation:', gs_state, gs_LE))
 
     def loadThrSettings(self):
         #load and read file
         path, ext = QtWidgets.QFileDialog.getOpenFileName(self, \
-            'Select settings file', 'Validation_Settings.ini')
+            'Select settings file', 'Thresholding_Settings.dat')
         if path == '':
             return
-        settings = ConfigParser()
-        settings.read(path)
+        lines = []
+        with open(path, 'r') as fh:
+            for line in fh:
+                lines.append(line[:-1])
         #extract and set values
-        stg = OrderedDict()
-        stg = settings['Validation']
-        self.s2n_CB.setChecked(eval(stg['s2n_state']))
-        self.s2n_LE.setText(stg['s2n_ratio'])
-        self.global_velocity_CB.setChecked(eval(stg['gv_state']))
-        self.global_uVelocity_LE.setText(stg['gv_ulim'])
-        self.global_vVelocity_LE.setText(stg['gv_vlim'])
-        self.local_velocity_CB.setChecked(eval(stg['lv_state']))
-        self.local_velocity_LE.setText(stg['lv_lim'])
-        self.local_kernel_LE.setText(stg['lv_kernel'])
-        self.global_std_CB.setChecked(eval(stg['std_state']))
-        self.global_std_LE.setText(stg['std_lim'])
+        *_, s2n_state, s2n_LE = [lines[1].split(';')[i].strip() for i in range(3)]
+        *_, gv_state, gv_LE1, gv_LE2 = [lines[2].split(';')[i].strip() for i in range(4)]
+        *_, lv_state, lv_LE1, lv_LE2 = [lines[3].split(';')[i].strip() for i in range(4)]
+        *_, gs_state, gs_LE = [lines[4].split(';')[i].strip() for i in range(3)]
+        self.s2n_CB.setChecked(eval(s2n_state))
+        self.s2n_LE.setText(s2n_LE)
+        self.global_velocity_CB.setChecked(eval(gv_state))
+        self.global_uVelocity_LE.setText(gv_LE1)
+        self.global_vVelocity_LE.setText(gv_LE2)
+        self.local_velocity_CB.setChecked(eval(lv_state))
+        self.local_velocity_LE.setText(lv_LE1)
+        self.local_kernel_LE.setText(lv_LE2)
+        self.global_std_CB.setChecked(eval(gs_state))
+        self.global_std_LE.setText(gs_LE)
+
         
     def getExpDir(self, tab):
         dir_path = QtWidgets.QFileDialog.getExistingDirectory(self, 'Select Experiment Directory')
@@ -270,18 +269,16 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
             self.exp_directory_LE.setText(dir_path)
         elif tab == 'modal':
             self.mdl_dir_LE.setText(dir_path)
-        elif tab == 'frequency':
-            self.freq_dir_LE.setText(dir_path)
 
     def saveProSettings(self, path=False):
         #getting the file path
         if path is False:
             path, ext = QtWidgets.QFileDialog.getSaveFileName(self, \
-                'Select a location to save the settings', 'Process_Settings.ini')
+                'Select a location to save the settings', 'Process_Settings.dat')
         if path == '':
             return
         #getting the settings from GUI
-        exp, pre, pro, pos = OrderedDict(), OrderedDict(), OrderedDict(), OrderedDict()
+        exp, pre, pro, pos = {}, {}, {}, {}
         exp['dir'] = self.exp_directory_LE.text()
         exp['exp'] = self.exp_experiments_LE.text()
         exp['run'] = self.exp_runs_LE.text()
@@ -327,7 +324,7 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
     def loadProSettings(self):
         #load setting file
         path, ext = QtWidgets.QFileDialog.getOpenFileName(self, \
-            'Select settings file', 'Process_Settings.ini')
+            'Select settings file', 'Process_Settings.dat')
         if path == '':
             return
         exp, pre, pro, pos = postprocessing.loadSettings(path)
@@ -378,7 +375,7 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
             return
         experiments = glob.glob(os.path.join(self.exp_directory_LE.text(), self.exp_experiments_LE.text()))
         for exp in experiments:
-            setting_file = os.path.join(exp, 'Processing_Settings.ini')
+            setting_file = os.path.join(exp, 'Processing_Settings.dat')
             exp, pre, pro, pos = self.saveProSettings(setting_file)
         self.run_start_PB.setEnabled(False)
         manager = multiprocessing.Manager()
@@ -422,9 +419,6 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
         elif tab == 'modal':
             self.mdl_progress_TE.appendPlainText('All done!')
             self.mdl_start_PB.setEnabled(True)
-        elif tab == 'frequency':
-            self.freq_progress_TE.appendPlainText('All done!')
-            self.freq_start_PB.setEnabled(True)
 
     def mdlLoadFrom(self):
         self.mdl_dir_LE.setText(self.exp_directory_LE.text())
@@ -435,7 +429,7 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
     def mdlLoadSettings(self):
         #load setting file
         path, ext = QtWidgets.QFileDialog.getOpenFileName(self, \
-            'Select settings file', 'Modal_Settings.ini')
+            'Select settings file', 'Modal_Settings.dat')
         if path == '':
             return
         exp, analysis, rec = modal.ModalAnalysis.loadSettings(path)
@@ -456,11 +450,11 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
         #getting the file path
         if path is False:
             path, ext = QtWidgets.QFileDialog.getSaveFileName(self, \
-                'Select a location to save the settings', 'Modal_Settings.ini')
+                'Select a location to save the settings', 'Modal_Settings.dat')
         if path == '':
             return
         #getting the settings from GUI
-        exp, analysis, rec = OrderedDict(), OrderedDict(), OrderedDict()
+        exp, analysis, rec = {}, {}, {}
         exp['dir'] = self.mdl_dir_LE.text()
         exp['exp'] = self.mdl_exp_LE.text()
         exp['pat'] = self.mdl_pat_LE.text()
@@ -485,7 +479,7 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
             return
         experiments = glob.glob(os.path.join(self.mdl_dir_LE.text(), self.mdl_exp_LE.text()))
         for experiment in experiments:
-            setting_file = os.path.join(experiment, 'Modal_Settings.ini')
+            setting_file = os.path.join(experiment, 'Modal_settings.dat')
             exp, analysis, rec = self.mdlSaveSettings(setting_file)
         # start the process thread 
         self.mdl_start_PB.setEnabled(False)
@@ -504,93 +498,6 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
         self.mdl_progress_PBar.setRange(0, nrun)
         self.mdl_progress_PBar.setValue(0)
 
-    def freqLoadFrom(self):
-        self.freq_dir_LE.setText(self.exp_directory_LE.text())
-        self.freq_exp_LE.setText(self.exp_experiments_LE.text())
-        self.freq_run_LE.setText(self.exp_runs_LE.text())
-        self.freq_nf_LE.setText(self.exp_nfiles_LE.text())
-
-    def freqLoadSettings(self):
-        #load setting file
-        path, ext = QtWidgets.QFileDialog.getOpenFileName(self, \
-            'Select settings file', 'Spectral_Settings.ini')
-        if path == '':
-            return
-        exp, analysis = spectral.FrequencyAnalysis.loadSettings(path)
-
-        self.freq_dir_LE.setText(exp['dir'])
-        self.freq_exp_LE.setText(exp['exp'])
-        self.freq_pat_LE.setText(exp['pat'])
-        self.freq_run_LE.setText(exp['run'])
-        self.freq_nf_LE.setText(exp['nf'])
-        self.freq_fs_LE.setText(analysis['fs'])
-        self.freq_dim_LE.setText(analysis['dim'])
-        self.freq_flim_LE.setText(analysis['flim'])
-        self.freq_pt_fft_CB.setChecked(eval(analysis['pt_fft']))
-        self.freq_pt_stft_CB.setChecked(eval(analysis['pt_stft']))
-        self.freq_gb_fft_CB.setChecked(eval(analysis['gb_fft']))
-        self.freq_gb_stft_CB.setChecked(eval(analysis['gb_stft']))
-        self.freq_pt_loc_CB.setCurrentText(analysis['pt_mode'])
-        self.freq_pt_loc_LE.setText(analysis['pt'])
-        self.freq_nperseg_LE.setText(analysis['nperseg'])
-        self.freq_noverlap_LE.setText(analysis['noverlap'])
-
-    def freqSaveSettings(self, path=False):
-        #getting the file path
-        if path is False:
-            path, ext = QtWidgets.QFileDialog.getSaveFileName(self, \
-                'Select a location to save the settings', 'Spectral_Settings.ini')
-        if path == '':
-            return
-        #getting the settings from GUI
-        exp, analysis, rec = OrderedDict(), OrderedDict(), OrderedDict()
-        exp['dir'] = self.freq_dir_LE.text()
-        exp['exp'] = self.freq_exp_LE.text()
-        exp['run'] = self.freq_run_LE.text()
-        exp['pat'] = self.freq_pat_LE.text()
-        exp['nf'] = self.freq_nf_LE.text()
-        analysis['pt_fft'] = str(self.freq_pt_fft_CB.isChecked())
-        analysis['pt_stft'] = str(self.freq_pt_stft_CB.isChecked())
-        analysis['gb_fft'] = str(self.freq_gb_fft_CB.isChecked())
-        analysis['gb_stft'] = str(self.freq_gb_stft_CB.isChecked())
-        analysis['fs'] = self.freq_fs_LE.text()
-        analysis['dim'] = self.freq_dim_LE.text()
-        analysis['flim'] = self.freq_flim_LE.text()
-        analysis['pt_mode'] = self.freq_pt_loc_CB.currentText()
-        analysis['pt'] = self.freq_pt_loc_LE.text()
-        analysis['nperseg'] = self.freq_nperseg_LE.text()
-        analysis['noverlap'] = self.freq_noverlap_LE.text()
-        #saving to file
-        spectral.FrequencyAnalysis.saveSettings(exp, analysis, path)
-
-        return exp, analysis
-
-    def freqStartProcessing(self):
-        # save process settings
-        if not os.path.isdir(self.freq_dir_LE.text()):
-            QtWidgets.QMessageBox.warning(self, 'Experiment Directory Not Found!', 
-                'The selected directory is not a valid path. Please select a valid directory in the "Experiment" section...')
-            return
-        experiments = glob.glob(os.path.join(self.freq_dir_LE.text(), self.freq_exp_LE.text()))
-        for experiment in experiments:
-            setting_file = os.path.join(experiment, 'Spectral_Settings.ini')
-            exp, analysis = self.freqSaveSettings(setting_file)
-        # start the process thread 
-        self.freq_start_PB.setEnabled(False)
-        self.freq_progress_TE.clear()
-        self.freq_process_thread = FrequencyProcessThread(exp, analysis)
-        self.freq_process_thread.progresstext_sig.connect(self.freq_progress_TE.appendPlainText)
-        self.freq_process_thread.progressbar_sig.connect(self.freq_progress_PBar.setValue)
-        self.freq_process_thread.finished.connect(lambda: self.finishProcess(tab='frequency'))
-        self.freq_process_thread.start()
-        # set up the progress bar
-        nrun = 0
-        for experiment in experiments:
-            runs = glob.glob(os.path.join(experiment, exp['run']))
-            nrun += len(runs)
-        self.freq_progress_PBar.setEnabled(True)
-        self.freq_progress_PBar.setRange(0, nrun)
-        self.freq_progress_PBar.setValue(0)
 
     # still under development, better not use it (directly close the window instead!)
     def stopProcess(self):
@@ -621,69 +528,6 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
                 self.mdl_progress_PBar.setValue(0)
                 self.mdl_start_PB.setEnabled(True)
                 self.mdl_progress_TE.appendPlainText('Progress Stoped!')
-
-
-class FrequencyProcessThread(QThread):
-
-    def __init__(self, exp, analysis):
-        super(FrequencyProcessThread, self).__init__()
-        self.exp, self.analysis= exp, analysis
-        self.progress = 0
-
-    progresstext_sig = Signal(str)
-    progressbar_sig = Signal(int)
-
-    def run(self):
-        experiments = glob.glob(os.path.join(self.exp['dir'], self.exp['exp']))
-        for experiment in experiments:
-            runs = glob.glob(os.path.join(experiment, self.exp['run']))
-            for run in runs:
-                path = os.path.join(run, 'Analysis')
-                self.progresstext_sig.emit(f'frequency analysis: {run}')
-                frequency_analysis = spectral.FrequencyAnalysis(path, int(self.exp['nf']), self.exp['pat'], \
-                    fs=float(self.analysis['fs']), dim=float(self.analysis['dim']))
-                velocity = None
-                self.progresstext_sig.emit('reading velocity data...')
-                if eval(self.analysis['gb_fft']) or eval(self.analysis['gb_stft']):
-                    velocity = frequency_analysis.getGlobalVelocity()
-                    self.progresstext_sig.emit('calculating global spectra...')
-                    if eval(self.analysis['gb_fft']):
-                        frequency_analysis.global_fft(flim=float(self.analysis['flim']), velocity=velocity)
-                    if eval(self.analysis['gb_stft']):
-                        frequency_analysis.global_stft(nperseg=int(self.analysis['nperseg']), noverlap=int(self.analysis['noverlap']), \
-                            flim=float(self.analysis['flim']), velocity=velocity)
-                
-                if eval(self.analysis['pt_fft']) or eval(self.analysis['pt_stft']):
-                    # to get u, v values first we need gx and gy 
-                    if self.analysis['pt_mode'] == 'Specified Point':
-                        gx, gy = map(float, self.analysis['pt'].split(','))
-                    elif self.analysis['pt_mode'] == 'Max Global Su':
-                        fname = os.path.join(path, 'Frequency Analysis', 'Global_Su_max.dat')
-                        if os.path.exists(fname):
-                            data = np.loadtxt(fname, skiprows=1)
-                            amax = np.argmax(data[:,3])
-                            gx, gy = data[amax,0], data[amax,1]
-                        else:
-                            self.progresstext_sig.emit('No Su data found! skiped, point spectra was not calculated.')
-                            gx, gy = None, None       
-                    elif self.analysis['pt_mode'] == 'Max Global Sv':
-                        fname = os.path.join(path, 'Frequency Analysis', 'Global_Sv_max.dat')
-                        if os.path.exists(fname):
-                            data = np.loadtxt(fname, skiprows=1)
-                            amax = np.argmax(data[:,3])
-                            gx, gy = data[amax,0], data[amax,1]
-                        else:
-                            self.progresstext_sig.emit('No Sv data found! skiped, point spectra was not calculated.')
-                            gx, gy = None, None
-                    if gy is not None:
-                        u, v = frequency_analysis.getPointVelocity(gx, gy, velocity=velocity)
-                        self.progresstext_sig.emit('calculating point spectra...')
-                        if eval(self.analysis['pt_fft']):
-                            frequency_analysis.point_fft(u, v)
-                        if eval(self.analysis['pt_stft']):
-                            frequency_analysis.point_stft(u, v, nperseg=int(self.analysis['nperseg']), noverlap=int(self.analysis['noverlap']))
-                self.progress += 1
-                self.progressbar_sig.emit(self.progress)
 
 
 class ModalProcessThread(QThread):
@@ -718,7 +562,6 @@ class ModalProcessThread(QThread):
                     modal_analysis.reconstructField(nmode=int(self.rec['nm']), nsp=int(self.rec['ns']))
                 self.progress += 1
                 self.progressbar_sig.emit(self.progress)
-
 
 class PIVProcessThread(QThread):
 
