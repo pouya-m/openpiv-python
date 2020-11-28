@@ -42,5 +42,4 @@ OpenPIV.egg-info
 *.ipynb_checkpoints*
 .vscode/
 *.pyd
-openpiv/pouya/Dummy Data
-openpiv/pouya/test.ipynb
+openpiv/pouya/

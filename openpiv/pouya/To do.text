@@ -1,5 +1,20 @@
 To do:
 ----------
+1- incrporate the lib.py into the libariry and test
+2- clean up the folders and ...
+3- update read me file
+4- create a setup.py script
+5- setup the project on PyPI
+5- setup instructions for users (PyPI) and devs (local library)
+6- survey the mother code to check for major improvments to be incorporated (new piv methods)
+7- freeze development for this weeks presentation
+8- write proper test routines for different functions
+
+GUI:
+- include other piv algorythms like multipass piv and window deformation
+- complete the masking section(static and dynamic)
+
+---------
 
 - fft optimization:
 	using pyfftw code may result in 3x faster speeds in fft calculation. However these speeds are reported
@@ -42,7 +57,6 @@ tools:
 	- New function to handle the construction of file paths to be analyzed by different parts of the program.
 	It should be compatible by the file system used by insight4G. --> Partially Done. (in the ValidationProcess.py)
 
-	
 
 Finished:
 -----------
