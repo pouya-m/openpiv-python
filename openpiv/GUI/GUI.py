@@ -27,7 +27,6 @@ import multiprocessing
 from imageio import imsave
 from collections import OrderedDict
 from configparser import ConfigParser
-import styles
 
 import matplotlib
 matplotlib.use('Qt5Agg')
@@ -888,6 +887,5 @@ if __name__ == "__main__":
     dirname = os.path.dirname(__file__)
     app.setWindowIcon(QIcon(os.path.join(dirname, 'PIV.ico')))
     app.setStyleSheet(open(os.path.join(dirname, 'StyleSheet.qss'), 'r').read())
-    #styles.dark(app)
     main_piv = MainPIV()
     sys.exit(app.exec_())
