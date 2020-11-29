@@ -42,3 +42,4 @@ OpenPIV.egg-info
 *.ipynb_checkpoints*
 .vscode/
 *.pyd
+openpiv/pouya/

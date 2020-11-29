@@ -1,20 +1,34 @@
-# OpenPIV Toolkit
+# OpenPIV
+[![Build Status](https://travis-ci.org/OpenPIV/openpiv-python.svg?branch=master)](https://travis-ci.org/OpenPIV/openpiv-python)
+[![Build status](https://ci.appveyor.com/api/projects/status/4ht2vwvur22jmn6b?svg=true)](https://ci.appveyor.com/project/alexlib/openpiv-python)
+[![DOI](https://zenodo.org/badge/4213/OpenPIV/openpiv-python.svg)](https://zenodo.org/badge/latestdoi/4213/OpenPIV/openpiv-python)
 
-As the name suggests OpenPIV Toolkit is a collection of Python scripts and tools developed based on the OpenPIV project (link) aimed at improving its’ PIV image processing and also provide extra post-processing capabilities to reveal new insight into the data set. A GUI is also provided to ease the usage of the code. While currently not supporting some of the features available in OpenPIV (like 3D PIV), the features that are covered often include improvements:
--	Improvements in the main PIV processing, producing less outlier vectors and thus extracting more information from the flow field
--   Enhanced output format that contains vorticity, velocity magnitude, velocity fluctuations (Reynolds stresses) and turbulent kinetic energy. Average field parameters are also calculated
--	Small improvements in the pre-process and validation process
+[![Anaconda-Server Badge](https://anaconda.org/conda-forge/openpiv/badges/version.svg)](https://anaconda.org/conda-forge/openpiv)
+[![Anaconda-Server Badge](https://anaconda.org/conda-forge/openpiv/badges/platforms.svg)](https://anaconda.org/conda-forge/openpiv)
+[![Anaconda-Server Badge](https://anaconda.org/conda-forge/openpiv/badges/license.svg)](https://anaconda.org/conda-forge/openpiv)
+[![Anaconda-Server Badge](https://anaconda.org/conda-forge/openpiv/badges/downloads.svg)](https://anaconda.org/conda-forge/openpiv)
+[![Anaconda-Server Badge](https://anaconda.org/conda-forge/openpiv/badges/installer/conda.svg)](https://conda.anaconda.org/conda-forge)
 
-Additional functionality includes:
--	Post-processing module to perform frequency analysis (FFT and STFT) for a specific point or globally giving spectral insight into the flow field
--	Post-processing module to perform modal analysis revealing information about the important flow structures. Two methods for POD analysis are available and Spectral-POD and DMD analysis are in the works
--	GUI framework (with all the settings exposed) for all the PIV processing and post-processing mentioned above that enables running calculations for large data sets contained in different folders
--	The GUI also contains a handy validation tab for quick flow visualization and adjustment of the validation parameters
 
+OpenPIV consists in a Python and Cython modules for scripting and executing the analysis of 
+a set of PIV image pairs. In addition, a Qt graphical user interface is in 
+development, to ease the use for those users who don't have python skills.
 
 ## Warning
-OpenPIV Toolkit is in beta state meaning it still might contain some bugs and the API may change. Bugs are being fixed and new features are added regularly. Contribution to the code base is higly appretiated, Especially if it's towards adding new features and capabilities.
-The toolkit is written and tested on a windows environment while OpenPIV is developed on Linux. There are no confilicts that I'm aware of on windows and you can run and test the code for yourself on linux.
+
+The OpenPIV python version is still in beta state. This means that
+it still might have some bugs and the API may change. However, testing and contributing
+is very welcome, especially if you can contribute with new algorithms and features.
+
+Development is currently done on a Linux/Mac OSX environment, but as soon as possible 
+Windows will be tested. If you have access to one of these platforms
+please test the code. 
+
+## Test it without installation
+Click the link - thanks to BinderHub, Jupyter and Conda you can now get it in your browser with zero installation:
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/openpiv/openpiv-python/master?filepath=openpiv%2Fexamples%2Fnotebooks%2Ftutorial1.ipynb)
+
+
 
 
 ## Installing
