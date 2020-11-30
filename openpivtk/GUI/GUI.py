@@ -3,6 +3,7 @@
 
 # Version 0.2.7 change log:
 # - spectral analysis tab now active
+# - new version format: 0.7 -> 0.2.7
 # - the experiment folder addressing is changed and patterns are used instead of single folder names, making the folder addresses more flexible.
 # - setting files changed to .ini format for simpler save and load functions
 # - 'import raw images' dialogue is removed all together. the same functionality can be achieved using the process tab and then importing unvalidated files.
@@ -146,8 +147,7 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
     def showAbout(self):
         message = f"PIV Toolkit<br>Version {self.version}<br><br>PIV Toolkit is based on the \
             'OpenPIV' open-source project but with many enhanced capabilities. More information can be found \
-            on the projects github page.<br><a href='https://github.com\
-            /pouya-m/openpiv-python/tree/PIV-Code-Pouya'>Github page</a><br><br>By Pouya Mohtat"
+            on the projects github page.<br><a href='https://github.com/pouya-m/openpiv-python/tree/PIV-Code-Pouya'>Github page</a><br><br>By Pouya Mohtat"
         msgBox = QtWidgets.QMessageBox.information(self, 'About', message)
 
 

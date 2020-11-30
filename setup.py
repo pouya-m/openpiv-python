@@ -11,8 +11,15 @@ setup(
     version ='0.2.7',
     packages=find_packages(),
     include_package_data=True,
+    description='Toolkit for PIV Processing and Post-Processing',
+    url="https://github.com/pouya-m/openpiv-toolkit",
+    author="Pouya Mohtat",
+    author_email="pouya.m67@gmail.com",
+    license="GNU General Public License v3",
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     setup_requires=[
-        'setuptools',
+        'setuptools'
     ],
     install_requires=[
         'numpy',            
@@ -43,7 +50,5 @@ setup(
         'Natural Language :: English',
         'Operating System :: OS Independent',
         'Topic :: Scientific/Engineering',
-    ],
-    long_description=long_description,
-    long_description_content_type='text/markdown'
+    ]
 )

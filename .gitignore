@@ -34,7 +34,7 @@ mark_result/Camera 1-127.tif.png
 mark_result/Camera 1-128.tif.png
 openpiv-python-mark-data-checkpoint.ipynb
 openpiv-python-tutorial-part1-checkpoint.ipynb
-dist
+dist/
 masking_tutorial/.ipynb_checkpoints
 openpivtk/masking_tutorial/.ipynb_checkpoints
 .eggs
@@ -42,3 +42,4 @@ openpivtk/masking_tutorial/.ipynb_checkpoints
 *.ipynb_checkpoints*
 .vscode/
 *.pyd
+openpivtk/pouya/
