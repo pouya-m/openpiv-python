@@ -15,7 +15,6 @@ setup(
     url="https://github.com/pouya-m/openpiv-toolkit",
     author="Pouya Mohtat",
     author_email="pouya.m67@gmail.com",
-    license="GNU General Public License v3",
     long_description=long_description,
     long_description_content_type='text/markdown',
     setup_requires=[

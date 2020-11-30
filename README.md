@@ -11,7 +11,7 @@ Additional functionality includes:
 -	The GUI also contains a handy validation tab for quick flow visualization and adjustment of the validation parameters
 
 ## Installation
-If you just want to use the library The easiest way is to use PyPI: (link to pypi):
+If you just want to use the library The easiest way is to use PyPI (https://pypi.org/project/OpenPIVToolkit/):
 
     pip install openpivtoolkit
 
@@ -38,8 +38,8 @@ for the whole data set with your desired validation thresholds. Finally, for 'Fr
   <tr><th colspan="2">some screenshots</th></tr>
   <tr><th>Validation Tab</th><th>Processing TB</th></tr>
   <tr>
-    <td><img src="https://github.com/pouya-m/openpiv-toolkit/blob/PIV-Code-Pouya/openpivtk/GUI/Screenshots/ValidationTab.PNG" title="Validation Tab" /></td>
-    <td><img src="https://github.com/pouya-m/openpiv-toolkit/blob/PIV-Code-Pouya/openpivtk/GUI/Screenshots/ProcessTab.PNG" title="Process Tab" /></td>
+    <td><img src="https://raw.githubusercontent.com/pouya-m/openpiv-toolkit/PIV-Code-Pouya/openpivtk/GUI/Screenshots/ValidationTab.PNG" title="Validation Tab" /></td>
+    <td><img src="https://raw.githubusercontent.com/pouya-m/openpiv-toolkit/PIV-Code-Pouya/openpivtk/GUI/Screenshots/ProcessTab.PNG" title="Process Tab" /></td>
   </tr>
 </table>
 
@@ -58,7 +58,7 @@ The toolkit is written and tested on a windows environment while OpenPIV is deve
 ### Copyright Statement
 This program is published in the hope that it will be useful to the community. Special thanks goes to the original authors of the OpenPIV software for releasing their work open source, thus providing the basis for this project.
 
-### Licence
+### License
 > The GNU General Public License
 >
 > Copyright (c) 2020, Pouya Mohtat (https://github.com/pouya-m, pouya.m67@gmail.com)
