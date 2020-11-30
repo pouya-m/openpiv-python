@@ -38,8 +38,8 @@ for the whole data set with your desired validation thresholds. Finally, for 'Fr
   <tr><th colspan="2">some screenshots</th></tr>
   <tr><th>Validation Tab</th><th>Processing TB</th></tr>
   <tr>
-    <td><img src="https://raw.githubusercontent.com/pouya-m/openpiv-toolkit/PIV-Code-Pouya/openpivtk/GUI/Screenshots/ValidationTab.PNG" title="Validation Tab" /></td>
-    <td><img src="https://raw.githubusercontent.com/pouya-m/openpiv-toolkit/PIV-Code-Pouya/openpivtk/GUI/Screenshots/ProcessTab.PNG" title="Process Tab" /></td>
+    <td><img src="https://raw.githubusercontent.com/pouya-m/openpiv-toolkit/PIV-Code-Pouya/openpivtk/GUI/Screenshots/ValidationTab.PNG" title="Validation tab" /></td>
+    <td><img src="https://raw.githubusercontent.com/pouya-m/openpiv-toolkit/PIV-Code-Pouya/openpivtk/GUI/Screenshots/ProcessTab.PNG" title="Process tab" /></td>
   </tr>
 </table>
 
