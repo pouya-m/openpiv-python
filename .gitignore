@@ -38,7 +38,7 @@ dist
 masking_tutorial/.ipynb_checkpoints
 openpiv/masking_tutorial/.ipynb_checkpoints
 .eggs
-OpenPIVToolkit.egg-info
+
 *.ipynb_checkpoints*
 .vscode/
 *.pyd
