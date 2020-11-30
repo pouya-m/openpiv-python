@@ -36,10 +36,9 @@ openpiv-python-mark-data-checkpoint.ipynb
 openpiv-python-tutorial-part1-checkpoint.ipynb
 dist
 masking_tutorial/.ipynb_checkpoints
-openpiv/masking_tutorial/.ipynb_checkpoints
+openpivtk/masking_tutorial/.ipynb_checkpoints
 .eggs
-
+*.egg-info/
 *.ipynb_checkpoints*
 .vscode/
 *.pyd
-openpiv/pouya/
