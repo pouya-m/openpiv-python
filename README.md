@@ -1,9 +1,8 @@
 # OpenPIV Toolkit
-
-As the name suggests OpenPIV Toolkit is a collection of Python scripts and tools developed based on the OpenPIV project (link) aimed at improving its’ PIV image processing and also provide extra post-processing capabilities to reveal new insight into the data set. A GUI is also provided to ease the usage of the code. While currently not supporting some of the features available in OpenPIV (like 3D PIV), the features that are covered often include improvements:
+As the name suggests OpenPIV Toolkit is a collection of Python scripts and tools developed based on the OpenPIV project ([OpenPIV](https://github.com/OpenPIV/openpiv-python)) aimed at improving its’ PIV image processing work flow and also provide extra post-processing capabilities to reveal new insight into the data set. A GUI is also provided to ease the usage of the code. While currently not supporting some of the features available in OpenPIV (like 3D PIV), the features that are covered often include improvements:
 -	Improvements in the main PIV processing, producing less outlier vectors and thus extracting more information from the flow field
 -   Enhanced output format that contains vorticity, velocity magnitude, velocity fluctuations (Reynolds stresses) and turbulent kinetic energy. Average field parameters are also calculated
--	Small improvements in the pre-process and validation process
+-	Improvements in the pre-process and validation process
 
 Additional functionality includes:
 -	Post-processing module to perform frequency analysis (FFT and STFT) for a specific point or globally giving spectral insight into the flow field
@@ -11,76 +10,68 @@ Additional functionality includes:
 -	GUI framework (with all the settings exposed) for all the PIV processing and post-processing mentioned above that enables running calculations for large data sets contained in different folders
 -	The GUI also contains a handy validation tab for quick flow visualization and adjustment of the validation parameters
 
+## Installation
+If you just want to use the library The easiest way is to use PyPI: (link to pypi):
 
-## Warning
-OpenPIV Toolkit is in beta state meaning it still might contain some bugs and the API may change. Bugs are being fixed and new features are added regularly. Contribution to the code base is higly appretiated, Especially if it's towards adding new features and capabilities.
-The toolkit is written and tested on a windows environment while OpenPIV is developed on Linux. There are no confilicts that I'm aware of on windows and you can run and test the code for yourself on linux.
+    pip install openpivtoolkit
 
+### Build from source
+But if you want to develop or modify the code it's best to have an editable installation of the package.
+Download the package from [github](https://github.com/pouya-m/openpiv-toolkit) or clone using git
 
-## Installing
+    git clone https://github.com/pouya-m/openpiv-toolkit.git
 
-Use PyPI: <https://pypi.python.org/pypi/OpenPIV>:
+Then run the folowing command on the downloaded folder
 
-    pip install cython numpy 
-    pip install openpiv --pre
+    pip install -e <name of the folder>
 
-`--pre` because sometimes we push pre-releases
+## How to use
+Usage is straightforward just run
 
-## Or `conda` 
+    python -m openpivtk
 
-    conda install -c conda-forge openpiv
-    
-    
-### To build from source
+on a commnd window to fire up the GUI. First, use the 'process' tab to process a small sample of your piv images, then use the
+'validation' tab to import the results and adjust validation settings. Now, from the 'process' tab you can run the PIV analysis 
+for the whole data set with your desired validation thresholds. Finally, for 'Frequency' and 'Modal Analysis' you can use their respective tabs.
 
-Download the package from the Github: https://github.com/OpenPIV/openpiv-python/archive/master.zip
-or clone using git
+<table>
+  <tr><th colspan="2">some screenshots</th></tr>
+  <tr><th>Validation Tab</th><th>Processing TB</th></tr>
+  <tr>
+    <td><img src="https://github.com/pouya-m/openpiv-toolkit/blob/PIV-Code-Pouya/openpiv/GUI/Screenshots/ValidationTab.PNG" title="Validation Tab" /></td>
+    <td><img src="https://github.com/pouya-m/openpiv-toolkit/blob/PIV-Code-Pouya/openpiv/GUI/Screenshots/ProcessTab.PNG" title="Process Tab" /></td>
+  </tr>
+</table>
 
-    git clone https://github.com/OpenPIV/openpiv-python.git
+### Documentation
+To learn the basics on specific parts of the code you can look into the examples/tutorials directory where some simple examples are provided.
+Also some information is available from the OpenPIV library here: http://openpiv.readthedocs.org 
 
-Using distutils create a local (in the same directory) compilation of the Cython files:
+## Development Info
+#### Developer:
+Pouya Mohtat (https://github.com/pouya-m, pouya.m67@gmail.com)
 
-    python setup.py build_ext --inplace
+### Warning
+OpenPIV Toolkit is in beta state which means it might contain some bugs and the API may change. Bugs are being fixed and new features are added regularly. Contribution to the code base is higly appretiated, Especially if it's towards adding new analysis capabilities.
+The toolkit is written and tested on a windows environment while OpenPIV is developed on Linux. There are no confilicts that I'm aware of on windows but you can also run and test the code for yourself on linux.
 
-Or for the global installation, use:
+### Copyright Statement
+This program is published in the hope that it will be useful to the community. Special thanks goes to the original authors of the OpenPIV software for releasing their work open source, thus providing the basis for this project.
 
-    python setup.py install 
+### Licence
+> The GNU General Public License
+>
+> Copyright (c) 2020, Pouya Mohtat (https://github.com/pouya-m, pouya.m67@gmail.com)
+>
+> This program is free software: you can redistribute it and/or modify
+> it under the terms of the GNU General Public License as published by
+> the Free Software Foundation, either version 3 of the License, or
+> (at your option) any later version.
 
+> This program is distributed in the hope that it will be useful,
+> but WITHOUT ANY WARRANTY without even the implied warranty of
+> MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+> GNU General Public License for more details.
 
-### Latest developments
-
-Latest developments go into @alexlib repository <https://github.com/alexlib/openpiv-python>
-
-## Documentation
-
-The OpenPIV documentation is available on the project web page at <http://openpiv.readthedocs.org>
-
-## Demo notebooks 
-
-1. [Tutorial Notebook 1](https://nbviewer.jupyter.org/github/OpenPIV/openpiv-python/blob/master/openpiv/examples/notebooks/tutorial1.ipynb)
-2. [Tutorial notebook 2](https://nbviewer.jupyter.org/github/OpenPIV/openpiv-python/blob/master/openpiv/examples/notebooks/tutorial2.ipynb)
-3. [Dynamic masking tutorial](https://nbviewer.jupyter.org/github/OpenPIV/openpiv-python/blob/master/openpiv/examples/notebooks/masking_tutorial.ipynb)
-4. [Multipass tutorial with WiDiM](https://nbviewer.jupyter.org/github/OpenPIV/openpiv-python/blob/master/openpiv/examples/notebooks/tutorial_multipass.ipynb)
-5. [Multipass with Windows Deformation](https://nbviewer.jupyter.org/github/OpenPIV/openpiv-python/blob/master/openpiv/examples/notebooks/window_deformation_comparison.ipynb)
-6. [Multiple sets in one notebook](https://nbviewer.jupyter.org/github/OpenPIV/openpiv-python/blob/master/openpiv/examples/notebooks/all_test_cases_sample.ipynb)
-
-
-## Contributors
-
-1. [Alex Liberzon](http://github.com/alexlib)
-2. [Roi Gurka](http://github.com/roigurka)
-3. [Zachary J. Taylor](http://github.com/zjtaylor)
-4. [David Lasagna](http://github.com/gasagna)
-5. [Mathias Aubert](http://github.com/MathiasAubert)
-6. [Pete Bachant](http://github.com/petebachant)
-7. [Cameron Dallas](http://github.com/CameronDallas5000)
-8. [Cecyl Curry](http://github.com/leycec)
-9. [Theo Käufer](http://github.com/TKaeufer) 
-
-
-Copyright statement: `smoothn.py` is a Python version of `smoothn.m` originally created by D. Garcia [https://de.mathworks.com/matlabcentral/fileexchange/25634-smoothn], written by Prof. Lewis and available on Github [https://github.com/profLewis/geogg122/blob/master/Chapter5_Interpolation/python/smoothn.py]. We include a version of it in the `openpiv` folder for convenience and preservation. We are thankful to the original authors for releasing their work as an open source. OpenPIV license does not relate to this code. Please communicate with the authors regarding their license. 
-
-## How to cite this work
-OpenPIV/openpiv-python:  http://doi.org/10.5281/zenodo.3566451
-
-
+> You should receive a copy of the GNU General Public License
+> along with this program.  If not, see <http://www.gnu.org/licenses/>.

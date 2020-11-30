@@ -1,21 +1,13 @@
-include *.md
-include *.txt
-include INSTALL
+include README.md
 include LICENSE.txt
-include MILESTONES
-include TODO
+include *.txt
 
-recursive-include openpiv/docs *
-recursive-include openpiv/examples *
-recursive-include openpiv/test *
+graft openpivtk/docs
+graft openpivtk/examples
+graft openpivtk/GUI
+graft openpivtk/test
 
-recursive-include openpiv *.bmp
-recursive-include openpiv *.c
-recursive-include openpiv *.ipynb
-recursive-include openpiv *.pdf
-recursive-include openpiv *.png
-recursive-include openpiv *.py
-recursive-include openpiv *.pyx
-recursive-include openpiv *.rst
-recursive-include openpiv *.tifinclude cysetuptools.py
-include cysetuptools.py
+prune openpivtk/pouya
+prune build
+prune dist
+prune OpenPIVToolkit.egg-info

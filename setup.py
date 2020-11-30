@@ -1,47 +1,26 @@
 import os
-
 from setuptools import setup, find_packages
-from setuptools.extension import Extension
-from Cython.Build import cythonize
-from Cython.Distutils import build_ext
-import numpy
-
-
-extensions = [
-    Extension("openpiv.process",["./openpiv/process.pyx"],include_dirs = [numpy.get_include()]),
-    Extension("openpiv.lib",["./openpiv/lib.pyx"], include_dirs = [numpy.get_include()])
-    ]
-
-extensions = cythonize(extensions,include_path = [numpy.get_include()])
-
 
 # read the contents of your README file
-from os import path
-this_directory = path.abspath(path.dirname(__file__))
-#with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
-with open(path.join(this_directory, 'README.md')) as f:
-    long_description = f.read()
+directory = os.path.abspath(os.path.dirname(__file__))
+with open(os.path.join(directory, 'README.md')) as fl:
+    long_description = fl.read()
 
 setup(
-    name = "OpenPIV",
-    version ='0.21.9',
-    cmdclass = {'build_ext': build_ext},
-    ext_modules = extensions,
+    name = "OpenPIVToolkit",
+    version ='0.2.7',
     packages=find_packages(),
     include_package_data=True,
     setup_requires=[
         'setuptools',
-        'cython>=0.29.14',
-        'numpy'
     ],
     install_requires=[
-        'cython>=0.29.14',
         'numpy',            
         'imageio',
         'matplotlib>=3',
         'scikit-image',
-        'progressbar2',
         'scipy',
+        'PySide2'
     ],
     classifiers = [
         # PyPI-specific version type. The number specified here is a magic constant
