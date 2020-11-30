@@ -38,8 +38,8 @@ for the whole data set with your desired validation thresholds. Finally, for 'Fr
   <tr><th colspan="2">some screenshots</th></tr>
   <tr><th>Validation Tab</th><th>Processing TB</th></tr>
   <tr>
-    <td><img src="https://github.com/pouya-m/openpiv-toolkit/blob/PIV-Code-Pouya/openpiv/GUI/Screenshots/ValidationTab.PNG" title="Validation Tab" /></td>
-    <td><img src="https://github.com/pouya-m/openpiv-toolkit/blob/PIV-Code-Pouya/openpiv/GUI/Screenshots/ProcessTab.PNG" title="Process Tab" /></td>
+    <td><img src="https://github.com/pouya-m/openpiv-toolkit/blob/PIV-Code-Pouya/openpivtk/GUI/Screenshots/ValidationTab.PNG" title="Validation Tab" /></td>
+    <td><img src="https://github.com/pouya-m/openpiv-toolkit/blob/PIV-Code-Pouya/openpivtk/GUI/Screenshots/ProcessTab.PNG" title="Process Tab" /></td>
   </tr>
 </table>
 
@@ -48,7 +48,7 @@ To learn the basics on specific parts of the code you can look into the examples
 Also some information is available from the OpenPIV library here: http://openpiv.readthedocs.org 
 
 ## Development Info
-#### Developer:
+### Developer:
 Pouya Mohtat (https://github.com/pouya-m, pouya.m67@gmail.com)
 
 ### Warning
