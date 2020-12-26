@@ -1,10 +1,15 @@
 # Proper Orthogonal Decomposition
 # By: Pouya Mohtat
 # Created: Sep. 2020
-# Last modified: 20 Dec. 2020 
+# Last modified: 26 Dec. 2020 
 
 # This script assumes the data grid to be uniform. If data spacing is not uniform then 'weights' should be included in 
 # the data matrix to account for the grid volume at each point...
+
+# what's new:
+# 1- Added spectral POD analysis gives spectral modes that develop coherently over time and space separated both by their frequency and spacial variation
+# 2- Added single frequency field extraction using fft giving a field that varies at only one specific frequency (averaged over time)
+# 3- Added single frequency field extraction using short-time fft which also shows variations over time
 
 # to do:
 # 1 - the reconstruction stage does not add the average flow to the results. thus the reconstructed fields are actually flow
