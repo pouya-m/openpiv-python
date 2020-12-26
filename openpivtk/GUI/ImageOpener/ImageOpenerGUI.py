@@ -67,7 +67,7 @@ class Window(ImageOpener.Ui_MainWindow, QtWidgets.QMainWindow):
         xmin, xmax = self.valplot.axes.get_xlim()
         ymin, ymax = self.valplot.axes.get_ylim()
         self.valplot.axes.cla()
-        self.valplot.axes.imshow(Img, cmap='gray', vmin=0, vmax=500)
+        self.valplot.axes.imshow(Img, cmap='gray', vmin=0, vmax=1000)
         if reset is False:
             self.valplot.axes.set_xlim(xmin, xmax)
             self.valplot.axes.set_ylim(ymin, ymax)

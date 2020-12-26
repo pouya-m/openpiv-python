@@ -1,5 +1,5 @@
 # OpenPIV Toolkit
-As the name suggests OpenPIV Toolkit is a collection of Python scripts and tools developed based on the OpenPIV project ([OpenPIV](https://github.com/OpenPIV/openpiv-python)) aimed at improving its’ PIV image processing work flow and also provide extra post-processing capabilities to reveal new insight into the data set. A GUI is also provided to ease the usage of the code. While currently not supporting some of the features available in OpenPIV (like 3D PIV), the features that are covered often include improvements:
+As the name suggests OpenPIV Toolkit is a collection of Python scripts and tools developed based on the OpenPIV project ([OpenPIV](https://github.com/OpenPIV/openpiv-python)) aimed at improving its PIV image processing work flow and also provide extra post-processing capabilities to reveal new insight into the data set. A GUI is also provided to ease the usage of the code. While currently not supporting some of the features available in OpenPIV (like 3D PIV), the features that are covered often include improvements:
 -	Improvements in the main PIV processing, producing less outlier vectors and thus extracting more information from the flow field
 -   Enhanced output format that contains vorticity, velocity magnitude, velocity fluctuations (Reynolds stresses) and turbulent kinetic energy. Average field parameters are also calculated
 -	Improvements in the pre-process and validation process
@@ -7,7 +7,7 @@ As the name suggests OpenPIV Toolkit is a collection of Python scripts and tools
 Additional functionality includes:
 -	Post-processing module to perform frequency analysis (FFT and STFT) for a specific point or globally giving spectral insight into the flow field
 -	Post-processing module to perform modal analysis revealing information about the important flow structures. Two methods for POD analysis are available and Spectral-POD and DMD analysis are in the works
--	GUI framework (with all the settings exposed) for all the PIV processing and post-processing mentioned above that enables running calculations for large data sets contained in different folders
+-	GUI framework (with all the settings exposed) for all the PIV processing and post-processing mentioned above that makes running calculations for large data sets a breeze
 -	The GUI also contains a handy validation tab for quick flow visualization and adjustment of the validation parameters
 
 ## Installation

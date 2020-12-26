@@ -11,7 +11,9 @@
 # - added functions to load and save setting files and logic to run analysis based on this settings
 
 # To do:
-# - add ensemble averaging for fft
+# - add ensemble averaging for fft -> (we can use scipy.signal.welsh for this)
+# - add an output file to show what is the maximum Su at each frequency (regardless of where in the flow field). this is usefull when looking at the data
+#   trying to see which frequencies are important. we can do this by looking at the point fft result but that's only for a specific point! we want this for GAS.
 
 
 import numpy as np
@@ -120,8 +122,8 @@ class FrequencyAnalysis():
         return_onesided=True, padded=False)
         Su[0,:] = Sv[0,:] = 0   #the first value is thrown out
         St = f*self.dim
-        Su = abs(Su)
-        Sv = abs(Sv)
+        Su = abs(Su)*2
+        Sv = abs(Sv)*2
         #saving results
         self.saveData(mode='point_stft', t=t, St=St, Su=Su, Sv=Sv)
         
@@ -218,8 +220,8 @@ class FrequencyAnalysis():
                 return_onesided=True, padded=False)
             f, t, Sv = signal.stft(velocity[i,1,:], fs=self.fs, window='hann', nperseg=nperseg, noverlap=noverlap, \
                 return_onesided=True, padded=False)
-            Su_map[i,2:,:] = abs(Su[:nfreq,:])
-            Sv_map[i,2:,:] = abs(Sv[:nfreq,:])
+            Su_map[i,2:,:] = abs(Su[:nfreq,:])*2
+            Sv_map[i,2:,:] = abs(Sv[:nfreq,:])*2
         #saving the results
         self.saveData(mode='global_stft', t=t, St=St, Su_map=Su_map, Sv_map=Sv_map)
 

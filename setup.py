@@ -8,7 +8,7 @@ with open(os.path.join(directory, 'README.md')) as fl:
 
 setup(
     name = "OpenPIVToolkit",
-    version ='0.2.7',
+    version ='0.2.8',
     packages=find_packages(),
     include_package_data=True,
     description='Toolkit for PIV Processing and Post-Processing',

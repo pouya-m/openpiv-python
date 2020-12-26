@@ -1,3 +1,3 @@
 @echo off
-call activate test-env
+call conda activate piv-env
 start pythonw GUI.py

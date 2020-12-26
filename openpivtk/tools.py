@@ -582,7 +582,7 @@ def display_windows_sampling( x, y, window_size, skip=0,  method='standard'):
 # (Pouya) added all the functions from this line down
 #--------------------------------------------------------------
 
-def read_data(filename, Ncolumn=5):
+def read_data(filename, Ncolumn=5, delimiter='\t'):
     """function to read the saved data file and reconstruct the 2D field data
     
     Parameters
@@ -593,7 +593,7 @@ def read_data(filename, Ncolumn=5):
     --------
     x, y, u, v, mask : 2D numpy arrays containing the position and field data
     """
-    a = np.loadtxt(filename, skiprows=1)
+    a = np.loadtxt(filename, skiprows=1, delimiter=delimiter)
     nx = int(round((a[-1,0]-a[0,0])/(a[1,0]-a[0,0]) + 1))
     ny = a.shape[0]//nx 
     m = np.zeros((ny, nx, Ncolumn))

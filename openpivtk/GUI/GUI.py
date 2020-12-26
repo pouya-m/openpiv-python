@@ -52,7 +52,7 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
         self.setupUi(self)
 
         #self.showMaximized()
-        self.version = '0.2.7'
+        self.version = '0.2.8'
         self.setWindowTitle(f'PIV Analysis Toolkit V{self.version}')
         self.resize(1280, 800)
         self.show()
@@ -420,6 +420,7 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
         if tab == 'process':
             self.run_progress_TE.appendPlainText('All done!')
             self.progress_timer.stop()
+            self.updateProgressBar()
             self.run_start_PB.setEnabled(True)
         elif tab == 'modal':
             self.mdl_progress_TE.appendPlainText('All done!')

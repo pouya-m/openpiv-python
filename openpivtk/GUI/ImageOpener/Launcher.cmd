@@ -1,3 +1,3 @@
 @echo
-call activate test-env
+call activate piv-env
 start pythonw ImageOpenerGUI.py
