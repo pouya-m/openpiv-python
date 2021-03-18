@@ -1,15 +1,19 @@
 # Compilation of tools to do post processing of data,
 # including calculations of vorticity and temporal analysis such as calculation of mean and fluctuating velocity components, turbulent kinetic energy and Reynolds stresses
-# Vorticity calculations are accurate! it has been validated against base Matlab code and Tecplot calculaions. All calculations are performed using vector calculus to reduce run time.
+# Vorticity calculations are accurate! it has been validated against base Matlab code and Tecplot calculaions. All calculations are vectorized to reduce run time.
 # By: Pouya Mohtat
-# Revision 0.2: Nov, 2020
+# Revision 0.2: Mar, 2021
+
+# Change Log:
+# - added .h5 file support which reduces the final file size to half and speeds up the reading of data for other parts of the program significantly
+# - some code refracting and cleanup
 
 # To do:
 # ------------
 # 1- A second order difference method can be implimented to calculate vorticity. It may increase the robustness of the vorticity results to noisy velocity signals.
 
 # 2- This script takes the unvalidated piv outputs and does post processing on those results. in the GUI we are doing the same thing only that we are doing it on 
-#    x, y, u, v results directly instead of reading it from files (to increase speed, obviously). so there is some duplicate code that could be refracted.
+#    x, y, u, v results directly instead of reading it from files (to increase speed, obviously). so there is some duplicate code that could be refracted. -> done
 
 
 import numpy as np
@@ -95,8 +99,8 @@ def calcAvgField(file_list, col_list=[2,3]):
     return np.hsplit(AVG, AVG.shape[1])
 
 
-def postProcess(file_name, pro, pos, saveLoc=None, header=None):
-    """Carries out the post processing for a minimall output. does the following:
+def postProcess(file_name, pro, pos, data=None):
+    """Carries out the post processing for a minimal output. does the following:
         validation and vector replacement, smoothing, field manipulation, scaling 
         and calculation of vorticity and velocity magnitude
 
@@ -124,8 +128,11 @@ def postProcess(file_name, pro, pos, saveLoc=None, header=None):
     x, y, u, v, mask, vor, velMag : 2D np.ndarray
         field data
     """
-    #read file
-    x, y, u, v, s2n = tools.read_data(file_name)
+    #read data
+    if data is None:
+        x, y, u, v, s2n = tools.load(file_name)
+    else:
+        x, y, u, v, s2n = data
     #validation
     mask = np.zeros(u.shape, dtype=bool)
     if pos['s2n_st'] == 'True':
@@ -162,31 +169,21 @@ def postProcess(file_name, pro, pos, saveLoc=None, header=None):
     velMag = np.sqrt(u*u + v*v)
 
     basename = os.path.basename(file_name)
-    if saveLoc != None:
-        save_name = os.path.join(saveLoc, basename)
-        tools.save(x, y, filename=save_name, variables=[u, v, mask, vor, velMag], header=header)
 
     return basename, u, v, mask, vor, velMag
 
 
-def simpleOutput(file_list, pro, pos):
-    """Manages the post processing for a minimall output and saves the results
+def startPostProcess(file_list, pro, pos, save_type='dat'):
+    """Carries out the post processing and saves the results
     """
-    Analysis_folder = os.path.dirname(os.path.dirname(file_list[0]))
-    header = '"x", "y", "u", "v", "mask", "vorticity", "velocity magnitude"'
-    
+    # do the post-proccessing
     pool = multiprocessing.Pool(processes=int(pro['nc']))
-    func = partial(postProcess, pro=pro, pos=pos, saveLoc=Analysis_folder, header=header)
-    pool.map(func, file_list)   
+    func = partial(postProcess, pro=pro, pos=pos)
+    data = pool.map(func, file_list)
 
-
-def extendedOutput(file_list, pro, pos):
-    """Carries out the post processing for an extended output with temporal analysis and saves the results
-    """
-    
     # initialize variables to hold data
     Nt = len(file_list)
-    x, y, u, v, mask = tools.read_data(file_list[0])
+    x, y, u, v, mask = tools.load(file_list[0])
     # do field manipulation and scaling on x and y
     if pos['fm_st'] == 'True':
         for fm in pos['fm_in'].split(','):
@@ -194,39 +191,65 @@ def extendedOutput(file_list, pro, pos):
     scale = float(pro['sc'])
     x, y = x/scale, y/scale
     u, v, mask, vor, velMag = np.zeros((5, x.shape[0], x.shape[1], Nt), np.float)
-    # get all the data
-    #for n, fl in enumerate(file_list):
-    #    *_, u[:,:,n], v[:,:,n], mask[:,:,n], vor[:,:,n], velMag[:,:,n] = postProcess(fl, pro, pos)
     basename = np.zeros((Nt,), 'U50')
-    pool = multiprocessing.Pool(processes=int(pro['nc']))
-    func = partial(postProcess, pro=pro, pos=pos, saveLoc=None, header=None)
-    data = pool.map(func, file_list)
+    # unpack data
     for n, D in enumerate(data):
         basename[n], u[:,:,n], v[:,:,n], mask[:,:,n], vor[:,:,n], velMag[:,:,n] = D
     del(data)
-
-    # calculate mean values
-    um, vm, vorm = u.mean(axis=2), v.mean(axis=2), vor.mean(axis=2)
-    # calculate fluctuations
-    up = u - um[...,np.newaxis]
-    vp = v - vm[...,np.newaxis]
-    upvp = up * vp
-    TKE = 0.5 * (up*up + vp*vp)
-    #TKEm = TKE.mean(axis=2) (this is the same as TKE_rms but has more computational cost to calculate)
-    upupm = (up*up).mean(axis=2)
-    vpvpm = (vp*vp).mean(axis=2)
-    upvpm = upvp.mean(axis=2)
-    TKE_rms = 0.5 * (upupm + vpvpm)
     # save the results
-    Analysis_folder = os.path.dirname(os.path.dirname(file_list[0]))
-    avg_file = os.path.join(Analysis_folder, 'AVG.dat')
-    header = '"x", "y", "u_avg", "v_avg", "vorticity_avg", "upup_avg", "vpvp_avg", "upvp_avg", "TKE_rms"'
-    tools.save( x, y, filename=avg_file, variables=[um, vm, vorm, upupm, vpvpm, upvpm, TKE_rms], header=header )
+    analysis_path = os.path.dirname(os.path.dirname(file_list[0]))
+    saveResults([x, y, basename, u, v, mask, vor, velMag], pos, analysis_path, save_type)
 
-    header = '"x", "y", "u", "v", "mask", "vorticity", "velocity magnitude", "up", "vp", "upvp", "TKE"'
-    for n, bn in enumerate(basename):
-        save_name = os.path.join(Analysis_folder, bn)
-        tools.save( x, y, filename=save_name, variables=[u[:,:,n], v[:,:,n], mask[:,:,n], vor[:,:,n], velMag[:,:,n], up[:,:,n], vp[:,:,n], upvp[:,:,n], TKE[:,:,n]], header=header )
+
+def saveResults(data, pos, analysis_path, save_type):
+    x, y, basename, u, v, mask, vor, velMag = data
+    # extended output
+    if pos['out_m'] == 'extended':
+        # calculate mean values
+        um, vm, vorm = u.mean(axis=2), v.mean(axis=2), vor.mean(axis=2)
+        # calculate fluctuations
+        up = u - um[...,np.newaxis]
+        vp = v - vm[...,np.newaxis]
+        upvp = up * vp
+        TKE = 0.5 * (up*up + vp*vp)
+        upupm = (up*up).mean(axis=2)
+        vpvpm = (vp*vp).mean(axis=2)
+        upvpm = upvp.mean(axis=2)
+        TKE_rms = 0.5 * (upupm + vpvpm)
+        # save the results
+        avg_file = os.path.join(analysis_path, 'AVG.dat')
+        header = '"x", "y", "u_avg", "v_avg", "vorticity_avg", "upup_avg", "vpvp_avg", "upvp_avg", "TKE_rms"'
+        tools.save( x, y, filename=avg_file, variables=[um, vm, vorm, upupm, vpvpm, upvpm, TKE_rms], header=header )
+
+        if save_type == 'dat':
+            header = '"x", "y", "u", "v", "mask", "vorticity", "velocity magnitude", "up", "vp", "upvp", "TKE"'
+            for n, bn in enumerate(basename):
+                fname = os.path.join(analysis_path, bn+'.dat')
+                tools.save( x, y, filename=fname, variables=[u[:,:,n], v[:,:,n], mask[:,:,n], vor[:,:,n], velMag[:,:,n], up[:,:,n], vp[:,:,n], upvp[:,:,n], TKE[:,:,n]], header=header )
+
+        elif save_type == 'h5':
+            variables=['x', 'y', 'u', 'v', 'mask', 'vorticity', 'velocity magnitude', 'up', 'vp', 'upvp', 'TKE']
+            xp = np.repeat(x[...,np.newaxis], len(basename), axis=2)
+            yp = np.repeat(y[...,np.newaxis], len(basename), axis=2)
+            run = os.path.basename(os.path.dirname(analysis_path))
+            fname = os.path.join(analysis_path, f'{run}.h5')
+            tools.save_h5(fname, [xp, yp, u, v, mask, vor, velMag, up, vp, upvp, TKE], variables, mode='2D', grp_names=basename, naming='')
+
+    # simple output
+    elif pos['out_m'] == 'simple':
+        if save_type == 'dat':
+            header = '"x", "y", "u", "v", "mask", "vorticity", "velocity magnitude"'
+            for n, bn in enumerate(basename):
+                fname = os.path.join(analysis_path, bn+'.dat')
+                tools.save(x, y, filename=fname, variables=[u[:,:,n], v[:,:,n], mask[:,:,n], vor[:,:,n], velMag[:,:,n]], header=header)
+
+        elif save_type == 'h5':
+            variables=['x', 'y', 'u', 'v', 'mask', 'vorticity', 'velocity magnitude']
+            xp = np.repeat(x[...,np.newaxis], len(basename), axis=2)
+            yp = np.repeat(y[...,np.newaxis], len(basename), axis=2)
+            run = os.path.basename(os.path.dirname(analysis_path))
+            fname = os.path.join(analysis_path, f'{run}.h5')
+            tools.save_h5(fname, [xp, yp, u, v, mask, vor, velMag], variables, mode='2D', grp_names=basename, naming='')
 
 
 def saveSettings(exp, pre, pro, pos, file_name):
@@ -256,7 +279,7 @@ if __name__ == "__main__":
     r'''
     # vorticity
     filename = r'C:\Users\Asus\Desktop\UI\Dummy Data\fixed000001n.dat'
-    x, y, u, v, mask = tools.read_data(filename)
+    x, y, u, v, mask = tools.load(filename)
     vor = vorticity(u,v,2.16215,2.16215)
     plt.imshow(vor,cmap='viridis', vmin=-40, vmax=40, interpolation='spline16', origin='lower', extent=(x.min(),x.max(),y.min(),y.max()))
     plt.show()
@@ -266,7 +289,7 @@ if __name__ == "__main__":
     file_list = glob.glob(path+'\Theta1800deg000???.dat')
     file_list.sort()
     u_avg, v_avg, vor_avg = calcAvgField(file_list, col_list=[2,3,4])
-    x, y, u, v, mask = tools.read_data(file_list[0])
+    x, y, u, v, mask = tools.load(file_list[0])
     save_file = os.path.join(path, 'AVG.dat')
     tools.save(x, y, u_avg, v_avg, vor_avg, save_file)
     plt.quiver(x,y,u_avg,v_avg)
@@ -274,7 +297,7 @@ if __name__ == "__main__":
     
     # save data
     filename = r'C:\Users\Asus\Desktop\UI\Dummy Data\fixed000001n.dat'
-    x, y, u, v, mask = tools.read_data(filename)
+    x, y, u, v, mask = tools.load(filename)
     vor = vorticity(u,v,2.16215,2.16215)
     fname = os.path.join(os.path.dirname(filename), 'test.dat')
     tools.save(x, y, filename=fname, header='"x", "y", "u", "v", "mask", "vorticity"', variables=[u, v, mask, vor])
@@ -302,27 +325,23 @@ if __name__ == "__main__":
     pprint.pprint(exp)
     pprint.pprint(pos)
     '''
+
     # test output
-    setting_file = r'E:\Temp\Processing_Settings.ini'
+    setting_file = r'C:\Users\Asus\Desktop\Dummy Data\exp1\Processing_Settings.ini'
     exp, pre, pro , pos = OrderedDict(), OrderedDict(), OrderedDict(), OrderedDict()
     exp, pre, pro, pos = loadSettings(setting_file)
-    import time
-    t1 = time.time()
-    for experiment in exp['exp'].split(','):
-        for run in exp['run'].split(','):
-            experiment, run = experiment.strip(), run.strip()
-            path = os.path.join(exp['dir'], experiment, run, 'Analysis', 'Unvalidated')
-            file_list = glob.glob(path+'\*.dat')
+    experiments = glob.glob(os.path.join(exp['dir'], exp['exp']))
+    experiments.sort()
+    for experiment in experiments:
+        runs = glob.glob(os.path.join(experiment, exp['run']))
+        runs.sort()
+        for run in runs:
+            print(f'postprocessing: {run}')
+            path = os.path.join(run, 'Analysis', 'Unvalidated', '*.dat')
+            file_list = glob.glob(path)
             file_list.sort()
             Nfiles = int(exp['nf'])
             if Nfiles != 0:
                 file_list = file_list[0:Nfiles]
-            extendedOutput(file_list, pro, pos)
-    print(time.time()-t1)
-    '''
-    # read data
-    datafile = r'E:\Temp\Zoomed in Cylinder\Fixed180\Analysis\Theta1800deg000001.dat'
-    x, y, u, v, mask, vor, velMag = tools.read_data(datafile, 7)
-    plt.imshow(vor,cmap='viridis', vmin=-100, vmax=100, interpolation='spline16', origin='lower')
-    plt.show()
-    '''
+            startPostProcess(file_list, pro, pos, save_type='h5')
+    print('All done!')

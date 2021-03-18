@@ -29,6 +29,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as pt
 # from builtins import range
 from imageio import imread as _imread, imsave as _imsave
+import h5py
 
 
 def display_vector_field(filename, on_img=False, image_name='None', 
@@ -582,7 +583,7 @@ def display_windows_sampling( x, y, window_size, skip=0,  method='standard'):
 # (Pouya) added all the functions from this line down
 #--------------------------------------------------------------
 
-def read_data(filename, Ncolumn=5, delimiter='\t'):
+def load(filename, Ncolumn=5, delimiter='\t'):
     """function to read the saved data file and reconstruct the 2D field data
     
     Parameters
@@ -634,10 +635,10 @@ def create_path(file_name, folders=['Analysis']):
     name = os.path.basename(file_name)
     name, *_ = name.split('.')
     file_path = os.path.dirname(os.path.dirname(file_name))
-    for fold in folders:
-        file_path = os.path.join(file_path, fold)
+    for folder in folders:
+        file_path = os.path.join(file_path, folder)
 
-    return os.path.join(file_path, name+'.dat')
+    return os.path.join(file_path, name)
 
 
 def create_directory(directory ,folder='Analysis'):
@@ -647,6 +648,7 @@ def create_directory(directory ,folder='Analysis'):
     if os.path.isdir(Folder_path)==False:
         os.mkdir(Folder_path)
     return Folder_path
+
 
 def find_bg(list_file=None, list_img=None):
     """finds the background for image list or file list, similar to mark_background2 function but
@@ -679,3 +681,78 @@ def find_bg2(file_list):
         IMG[:,:,i] = imread(fl)
 
     return IMG.min(axis=2)
+
+
+def save_h5(fname, data, variables, mode='1D', grp_names=None, naming='auto'):
+    """
+    Description
+    ----------
+        in 1D mode, 'data' is a 2D/3D array in which each column holds data for specific variables
+        declared in order by 'variables' and the 3rd axis (if it exists) holds data at different times. 
+        in 2D mode, data is a list of 2D/3D arrays each containing data for a specific variable 
+        declared in order by 'variables'. again if each element in 'data' is 3 dimensional, then the 3rd axis
+        shows time data points and will be saved in different groups in the .h5 file.
+    """
+
+    hf = h5py.File(fname, 'w')
+    if mode == '1D':
+        if data.ndim == 2:
+            data = data[...,np.newaxis]
+        M = len(np.unique(data[:,0,0]))
+        N = data.shape[0]//M
+        for t in range(data.shape[2]):
+            if naming == 'auto':
+                grp = hf.create_group(f'time{t:04}', track_order=True)
+            else:
+                grp = hf.create_group(grp_names[t], track_order=True)
+            for i, v in enumerate(variables):
+                grp.create_dataset(v, data=np.reshape(data[:,i,t], (N, M)), compression="gzip")
+    elif mode == '2D':
+        if data[0].ndim == 2:
+            for i in range(len(variables)):
+                data[i] = data[i][...,np.newaxis]
+        for t in range(data[0].shape[2]):
+            if naming == 'auto':
+                grp = hf.create_group(f'time{t:04}', track_order=True)
+            else:
+                grp = hf.create_group(grp_names[t], track_order=True)
+            for i, v in enumerate(variables):
+                grp.create_dataset(v, data=data[i][:,:,t].squeeze(), compression="gzip")
+    hf.close()
+
+
+def load_h5(fname, mode='1D', ntime='all', ds='all'):
+    """
+    Description
+    ----------
+        in 1D mode, the returned data is a 3 dimensional array (columns:different variables, 3rd axis: time)
+        in 2D mode, data is a list of 3 dimensional arrays containing data for each variable.
+        the list of variables is also returned.
+    """
+    hf = h5py.File(fname, 'r')
+    groups = list(hf.keys())
+    datasets = list(hf[groups[0]])
+    shape = hf[f'{groups[0]}/{datasets[0]}'].shape
+    if ds == 'all':
+        dss = datasets
+    else:
+        dss = ds
+    if ntime == 'all':
+        grps = groups
+    else:
+        grps = groups[0:ntime]
+
+    if mode == '1D':
+        data = np.zeros((shape[0]*shape[1],len(dss),len(grps)))
+        for t, grp in enumerate(grps):
+            for i, ds in enumerate(dss):
+                data[:,i,t] = np.array(hf[f'{grp}/{ds}']).ravel()
+
+    if mode == '2D':
+        data = np.zeros((len(dss),shape[0],shape[1],len(grps)))
+        for t, grp in enumerate(grps):
+            for i, ds in enumerate(dss):
+                data[i,:,:,t] = np.array(hf[f'{grp}/{ds}'])
+    
+    hf.close()
+    return data, datasets

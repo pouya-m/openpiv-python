@@ -1,18 +1,20 @@
 # Proper Orthogonal Decomposition
 # By: Pouya Mohtat
 # Created: Sep. 2020
-# Last modified: 26 Dec. 2020 
+# Last modified: Mar. 2021 
 
 # This script assumes the data grid to be uniform. If data spacing is not uniform then 'weights' should be included in 
 # the data matrix to account for the grid volume at each point...
 
 # what's new:
-# 1- Added spectral POD analysis gives spectral modes that develop coherently over time and space separated both by their frequency and spacial variation
-# 2- Added single frequency field extraction using fft giving a field that varies at only one specific frequency (averaged over time)
-# 3- Added single frequency field extraction using short-time fft which also shows variations over time
+# 1- added support for .h5 files which reduces the run time significantly
+# 2- Added spectral POD analysis gives spectral modes that develop coherently over time and space separated both by their frequency and spacial variation
+# 3- Added specific frequency field extraction using fft giving a field that varies at only one or more specific frequencies (averaged over time)
+# 4- Added specific frequency field extraction using short-time fft which also shows variations over time
 
 # to do:
-# 1 - the reconstruction stage does not add the average flow to the results. thus the reconstructed fields are actually flow
+# 1 - make the 'spectral pod analysis' and 'frequency fields extraction' functions available in GUI.
+# 2 - the reconstruction stage does not add the average flow to the results. thus the reconstructed fields are actually flow
 #     fluctuations (up, vp) not the flow field (u, v)
 
 
@@ -20,7 +22,7 @@ import os, glob, warnings, time
 import numpy as np
 import scipy.signal as signal
 import matplotlib.pyplot as plt
-# from openpivtk import tools
+from openpivtk import tools
 from collections import OrderedDict
 from configparser import ConfigParser
 # import random
@@ -32,9 +34,18 @@ class ModalAnalysis():
         self.N = nfiles
         file_list = glob.glob(os.path.join(path, pattern))
         file_list.sort()
-        self.file_list = file_list[:nfiles]
-        #random.shuffle(self.file_list)
-        self.npoints = np.loadtxt(file_list[0], skiprows=1).shape[0]
+        *_, ext = os.path.splitext(file_list[0])
+        if ext == '.h5':
+            self.fmode = 'h5'
+            self.file_list = file_list
+            temp, *_ = tools.load_h5(self.file_list[0], mode='1D', ntime=1, ds=['x', 'y'])
+            self.xy = temp[:,:,0]
+        elif ext == '.dat':
+            self.fmode = 'dat'
+            self.file_list = file_list[:nfiles]
+            temp = np.loadtxt(self.file_list[0], skiprows=1)
+            self.xy = temp[:,0:2]
+        self.npoints = len(self.xy[:,0])
         self.M = 2 * self.npoints
         self.dir = os.path.join(path, 'Modal Analysis')
         if os.path.isdir(self.dir) == False:
@@ -102,7 +113,7 @@ class ModalAnalysis():
         for i in range(nmode):
             for j in range(self.A.shape[1]):
                 u[:,i] += v[j,i] * self.A[:,j]
-            u[:,i] /= w[i]
+            u[:,i] /= np.sqrt(w[i])
         #calculate coefficients
         a = np.matmul(u.T, self.A)
         self.saveData(u, w, p, a)
@@ -186,7 +197,7 @@ class ModalAnalysis():
     def extractSingleFreqAvg(self, fd, fs, fdim=1):
         """limits the frequency content in the flow field such that the remaining field varies only
          at the desired frequency given by fd, shortcut to calculate phi=psi*exp(i2pift). this is averaged
-         over time as it uses fft of the whole signal."""
+         over time as it uses fft of the whole signal. consider using 'extractFreqField' function bellow instead..."""
 
         Af = np.fft.rfft(self.A, axis=1)*2/self.N
         f = np.fft.rfftfreq(self.A.shape[1], 1.0/fs)*fdim
@@ -201,19 +212,29 @@ class ModalAnalysis():
         return Ar
 
 
-    def extractSingleFreqFlow(self, fd, fs, nperseg, noverlap, windowing='hamming', fdim=1):
+    def extractFreqField(self, fd, fs, nperseg=None, noverlap=None, windowing='hamming', fdim=1, method='stft'):
         """limits the frequency content in the flow field such that the remaining field varies only
-         at the desired frequency given by fd. this uses a short-time fft, thus the resulting flow retains 
-         its time dependency """
+         at the desired frequencies given by fd (it can be a single frequency or multiple frequencies).
+         this uses either stft or fft methods to either keep time dependency or provide an averaged result"""
 
-        f, t, Af = signal.stft(self.A, fs=fs, window=windowing, nperseg=nperseg, noverlap=noverlap, \
-            return_onesided=True, padded=False, axis=1)
-        f = f*fdim
-        ind = np.argmin(abs(f-fd))
+        if method == 'stft':
+            f, t, Af = signal.stft(self.A, fs=fs, window=windowing, nperseg=nperseg, noverlap=noverlap, \
+                return_onesided=True, padded=False, axis=1)
+            f = f*fdim
+            Afd = np.zeros(Af.shape, Af.dtype)
+            for fi in fd:
+                ind = np.argmin(abs(f-fi))
+                Afd[:,ind,:] = Af[:,ind,:]
+            tr, Ar = signal.istft(Afd, fs=fs, window=windowing, nperseg=nperseg, noverlap=noverlap, input_onesided=True)
 
-        Afd = np.zeros(Af.shape, Af.dtype)
-        Afd[:,ind,:] = Af[:,ind,:]
-        tr, Ar = signal.istft(Afd, fs=fs, window=windowing, nperseg=nperseg, noverlap=noverlap, input_onesided=True)
+        elif method == 'fft':
+            Af = np.fft.rfft(self.A, axis=1)
+            f = np.fft.rfftfreq(self.A.shape[1], 1.0/fs)*fdim
+            Afd = np.zeros(Af.shape, Af.dtype)
+            for fi in fd:
+                ind = np.argmin(abs(f-fi))
+                Afd[:,ind] = Af[:,ind]
+            Ar = np.fft.irfft(Afd, axis=1)
 
         # save the filtered field
         self.saveData(A_r=Ar)
@@ -224,13 +245,17 @@ class ModalAnalysis():
         """reads all files and returns xy info and the data matrix
         """
         A = np.zeros((self.M, self.N))
-
-        #loop to read all files and collect data matrix
-        for i in range(self.N):
-            data = np.loadtxt(self.file_list[i], skiprows=1)
-            A[0:self.M//2, i] = data[:, 7]          # 7th column is u'
-            A[self.M//2:self.M, i] = data[:, 8]     # 8th column is v'
-
+        #read all files and collect data matrix
+        if self.fmode == 'dat':
+            for i in range(self.N):
+                data = np.loadtxt(self.file_list[i], skiprows=1)
+                A[0:self.M//2, i] = data[:, 7]          # 7th column is u'
+                A[self.M//2:self.M, i] = data[:, 8]     # 8th column is v'
+        elif self.fmode == 'h5':
+            data, *_ = tools.load_h5(self.file_list[0], mode='1D', ntime=self.N, ds=['up', 'vp'])
+            A[0:self.M//2, :] = data[:, 0, :]
+            A[self.M//2:self.M, :] = data[:, 1,:]
+        
         return A
 
 
@@ -303,28 +328,27 @@ class ModalAnalysis():
         """write data in the "Modal Analysis" directory
         """
         # get grid info
-        sample = np.loadtxt(self.file_list[0], skiprows=1)
-        nx = len(np.unique(sample[:,0]))
+        nx = len(np.unique(self.xy[:,0]))
         ny = self.npoints//nx
 
         if u is not None:
             #saving modes data
             modes = np.zeros((self.npoints, 2*u.shape[1]+2))
-            modes[:,0:2] = sample[:,0:2]
+            modes[:,0:2] = self.xy
             for i in range(u.shape[1]):
                 modes[:,2*i+2] = u[0:self.M//2,i]
                 modes[:,2*i+3] = u[self.M//2:self.M,i]
             headerline = 'TITLE="Mode Fields" VARIABLES="x", "y", '
-            headerline += ', '.join([f'"u{i}", "v{i}"' for i in range(u.shape[1])])
+            headerline += ', '.join([f'"u{i+1}", "v{i+1}"' for i in range(u.shape[1])])
             headerline += f' ZONE I={nx}, J={ny}'
-            np.savetxt(os.path.join(self.dir, 'Modes.dat'), modes, fmt='%8.4f', delimiter='\t', header=headerline, comments='')
+            np.savetxt(os.path.join(self.dir, 'Modes.dat'), modes, fmt='%8.6f', delimiter='\t', header=headerline, comments='')
 
         if w is not None:
             #saving w and p data
             wp = np.zeros((w.size,4))
             wp[:,0], wp[:,1], wp[:,2], wp[:,3] = range(w.size), w, p, np.cumsum(p)
             headerline = 'TITLE="eignvalues and energy distribution" VARIABLES="mode", "eignvalue", "energy percentage", "cumulative energy percentage"'
-            np.savetxt(os.path.join(self.dir, 'Energy Distribution.dat'), wp, fmt='%8.4f', delimiter='\t', header=headerline, comments='')
+            np.savetxt(os.path.join(self.dir, 'Energy Distribution.dat'), wp, fmt='%8.6f', delimiter='\t', header=headerline, comments='')
 
         if a is not None:
             #saving temporal coefficients
@@ -333,23 +357,27 @@ class ModalAnalysis():
             ap[:,1:] = a.T
             headerline = 'TITLE="temporal coefficients" VARIABLES="snapshot", '
             headerline += ', '.join([f'"a{i}"' for i in range(a.shape[0])])
-            np.savetxt(os.path.join(self.dir, 'Coefficients.dat'), ap, fmt='%8.4f', delimiter='\t', header=headerline, comments='')
+            np.savetxt(os.path.join(self.dir, 'Coefficients.dat'), ap, fmt='%8.6f', delimiter='\t', header=headerline, comments='')
 
         if A_r is not None:
             #saving the reconstructed flow fields
-            A_rr = np.zeros((self.npoints, 4))
-            A_rr[:,0:2] = sample[:,0:2]
-            for i in range(A_r.shape[1]):
-                A_rr[:,2] = A_r[0:self.M//2,i]
-                A_rr[:,3] = A_r[self.M//2:self.M,i]
-                headerline = f'TITLE="Reconstructed Fields {i+1}" VARIABLES="x", "y", "u", "v" ZONE I={nx}, J={ny}'
-                np.savetxt(os.path.join(self.dir, f'ReconstructedField{i+1:06}.dat'), A_rr, fmt='%8.4f', delimiter='\t', header=headerline, comments='')
+            A_rr = np.zeros((self.npoints, 4, A_r.shape[1]))
+            A_rr[:,0:2,:] = self.xy[:,:,np.newaxis]
+            A_rr[:,2,:] = A_r[0:self.M//2,:]
+            A_rr[:,3,:] = A_r[self.M//2:self.M,:]
+
+            if self.fmode == 'dat':
+                for i in range(A_r.shape[1]):
+                    headerline = f'TITLE="Reconstructed Fields {i+1}" VARIABLES="x", "y", "u", "v" ZONE I={nx}, J={ny}'
+                    np.savetxt(os.path.join(self.dir, f'ReconstructedField{i+1:06}.dat'), A_rr[:,:,i], fmt='%8.6f', delimiter='\t', header=headerline, comments='')
+            elif self.fmode == 'h5':
+                tools.save_h5(os.path.join(self.dir, 'ReconstructedFields.h5'), A_rr, variables=['x', 'y', 'u', 'v'], mode='1D')
 
         if spod is not None:
             # saving spod results
             Phi, Lam, freq, p = spod
             modes = np.zeros((self.npoints,2*Phi.shape[1]+2,Phi.shape[2]), float)
-            modes[:,0:2,:] = sample[:,0:2,np.newaxis]
+            modes[:,0:2,:] = self.xy[:,:,np.newaxis]
             for i in range(Phi.shape[1]):
                 modes[:,2*i+2,:] = Phi[0:self.M//2,i,:]
                 modes[:,2*i+3,:] = Phi[self.M//2:self.M,i,:]
@@ -359,15 +387,23 @@ class ModalAnalysis():
 
             headerline = f'TITLE="Eigenvalues" VARIABLES="frequency", '
             headerline += ', '.join([f'"mode{i+1}"' for i in range(Lam.shape[0])])
-            np.savetxt(os.path.join(self.dir, f'EigenValues.dat'), Lam_s, fmt='%8.4f', delimiter='\t', header=headerline, comments='')
+            np.savetxt(os.path.join(self.dir, f'EigenValues.dat'), Lam_s, fmt='%8.6f', delimiter='\t', header=headerline, comments='')
             headerline = f'TITLE="Energy Distribution" VARIABLES="frequency", '
             headerline += ', '.join([f'"mode{i+1}"' for i in range(p.shape[0])])
-            np.savetxt(os.path.join(self.dir, f'EnergyDistribution.dat'), p_s, fmt='%8.4f', delimiter='\t', header=headerline, comments='')
-            for f in range(Phi.shape[2]):
-                headerline = f'TITLE="Mode Fields for freq={freq[f]}" VARIABLES="x", "y", '
-                headerline += ', '.join([f'"u{i+1}", "v{i+1}"' for i in range(Phi.shape[1])])
-                headerline += f' ZONE I={nx}, J={ny}'
-                np.savetxt(os.path.join(self.dir, f'modesAtFreq={freq[f]:0.3}.dat'), modes[:,:,f], fmt='%8.4f', delimiter='\t', header=headerline, comments='')
+            np.savetxt(os.path.join(self.dir, f'EnergyDistribution.dat'), p_s, fmt='%8.6f', delimiter='\t', header=headerline, comments='')
+
+            if self.fmode == 'dat':
+                hl = ', '.join([f'"u{i+1}", "v{i+1}"' for i in range(Phi.shape[1])]) + f' ZONE I={nx}, J={ny}'
+                for f in range(Phi.shape[2]):
+                    headerline = f'TITLE="Mode Fields for freq={freq[f]}" VARIABLES="x", "y", {hl}'
+                    np.savetxt(os.path.join(self.dir, f'modesAtFreq={freq[f]:0.3}.dat'), modes[:,:,f], fmt='%8.6f', delimiter='\t', header=headerline, comments='')
+            elif self.fmode == 'h5':
+                variables = ['x', 'y']
+                for i in range(Phi.shape[1]):
+                    variables.append(f'u{i+1}')
+                    variables.append(f'v{i+1}')
+                grps = [f'mode field at freq={freq[f]:0.3f}' for f in range(Phi.shape[2])]
+                tools.save_h5(os.path.join(self.dir, 'spod_modes.h5'), modes, variables, mode='1D', grp_names=grps, naming=1)
 
 
     @staticmethod
@@ -422,11 +458,15 @@ if __name__ == "__main__":
     # print(f'Modal Analysis finished in: {t} sec')
 
     # spectral POD run
-    path = r'F:\Re11_medium\theta108deg\Analysis'
-    modal = ModalAnalysis(path, 256, 'theta*')
-    # modal.spectralpod(nperseg=512, noverlap=410, fs=14.5, flim=0.6, windowing=False, fdim=0.27166)
+    import time
+    t1 = time.time()
+    path = r'G:\Re11_medium\theta000deg\Analysis'
+    modal = ModalAnalysis(path, 500, '*.h5')
+    modal.spectralpod(nperseg=128, noverlap=108, fs=14.5, flim=0.6, windowing=False, fdim=0.27166)
+    print(f'done in {time.time()-t1} sec')
 
     # Ar = modal.extractSingleFreqAvg(0.138, 14.5, fdim=0.27166)
 
-    Ar = modal.extractSingleFreqFlow(fd=0.215, fs=14.286, nperseg=128, noverlap=96, fdim=0.27166)
-    
+    # Ar = modal.extractFreqField(fd=[0.185,0.21], fs=14.5, nperseg=128, noverlap=108, fdim=0.26737, method='fft')
+    # print(time.time()-t1)
+

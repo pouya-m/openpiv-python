@@ -14,6 +14,7 @@
 # 1- stop buttons don't work at the moment. they should provide a gracefull exit from the current running process.
 #    it's necessary to have a stop flag of some sort to properly exit from the main 'task.run' multiprocessing loop and have all the child processes 
 #    and workers neatly closed and the resources freed up.
+# 2- check for errors before printing 'all done!' in the textedit...
 
 
 
@@ -84,6 +85,7 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
         self.mdl_save_PB.clicked.connect(self.mdlSaveSettings)
         self.mdl_start_PB.clicked.connect(self.mdlStartProcessing)
         self.mdl_stop_PB.clicked.connect(self.stopProcess)
+        self.mdl_method_CB.currentTextChanged.connect(self.mdlUpdateAnalysis)
         # Frequency tab initialization
         self.freq_load_from_PB.clicked.connect(self.freqLoadFrom)
         self.freq_dir_TB.clicked.connect(lambda: self.getExpDir(tab='frequency'))
@@ -122,7 +124,7 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
         self.files_TW.clear()
         if setchange is None:
             for path in file_paths:
-                *_, u, v, sig2noise = tools.read_data(path)
+                *_, u, v, sig2noise = tools.load(path)
                 key = os.path.basename(path)
                 mask_temp = np.zeros(u.shape, dtype=bool)
                 self.file_list[key] = [path, mask_temp, u, v, sig2noise]
@@ -187,7 +189,7 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
     def updatePlot(self, current, previous=None):
         if self.files_TW.itemFromIndex(current):
             key = self.files_TW.itemFromIndex(current).text(0)
-            x, y, u, v, *_ = tools.read_data(self.file_list[key][0])
+            x, y, u, v, *_ = tools.load(self.file_list[key][0])
             mask = self.file_list[key][1]
             valid = ~mask
             if self.first_plot is False:
@@ -506,6 +508,17 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
         self.mdl_progress_PBar.setEnabled(True)
         self.mdl_progress_PBar.setRange(0, nrun)
         self.mdl_progress_PBar.setValue(0)
+    
+    def mdlUpdateAnalysis(self):
+        opt = self.mdl_method_CB.currentText()
+        if opt == 'Singular Value Decomposition':
+            print('1')
+        elif opt == 'Snapshots Method':
+            print('2')
+        elif opt == '32':
+            print('2')
+        elif opt == '43':
+            print('2')
 
     def freqLoadFrom(self):
         self.freq_dir_LE.setText(self.exp_directory_LE.text())
@@ -733,6 +746,7 @@ class PIVProcessThread(QThread):
         self.stop_timer = QTimer(self)
         self.stop_timer.timeout.connect(self.stopProcess)
         self.stop_timer.start(500)
+        self.save_type = 'dat'
         
     progress_sig = Signal(str)  #signals have to be defined as class variables
 
@@ -772,46 +786,26 @@ class PIVProcessThread(QThread):
                 task.n_files = int(self.exp['nf'])
                 Process = partial(mainPIVProcess, bga=background_a, bgb=background_b, pro=self.pro, pos=self.pos, processed_files=self.processed_files)
                 data = task.run( func = Process, n_cpus=int(self.pro['nc']) )
-                
-                # extended output
-                if self.pos['out_m'] == 'extended':
-                    self.progress_sig.emit('calculating extended output...')
-                    # initialize variables to hold data
-                    im_file, *_ = glob.glob(os.path.join(data_dir, self.exp['patA']))
-                    image = tools.imread(im_file)
-                    x, y = pyprocess.get_coordinates(image.shape, int(self.pro['ws']), int(self.pro['ol']))
-                    # do field manipulation and scaling on x and y
-                    if self.pos['fm_st'] == 'True':
-                        for fm in self.pos['fm_in'].split(','):
-                            x, y, *_ = tools.manipulate_field(x, y, x, x, x, mode=fm.strip())
-                    scale = float(self.pro['sc'])
-                    x, y = x/scale, y/scale
-                    u, v, mask, vor, velMag = np.zeros((5, x.shape[0], x.shape[1], int(self.exp['nf'])), np.float)
-                    basename = np.zeros((int(self.exp['nf']),), 'U50')
-                    # extract data
-                    for n, D in enumerate(data):
-                        basename[n], u[:,:,n], v[:,:,n], mask[:,:,n], vor[:,:,n], velMag[:,:,n] = D
-                    del(data)
-                    # calculate mean values
-                    um, vm, vorm = u.mean(axis=2), v.mean(axis=2), vor.mean(axis=2)
-                    # calculate fluctuations
-                    up = u - um[...,np.newaxis]
-                    vp = v - vm[...,np.newaxis]
-                    upvp = up * vp
-                    TKE = 0.5 * (up*up + vp*vp)
-                    upupm = (up*up).mean(axis=2)
-                    vpvpm = (vp*vp).mean(axis=2)
-                    upvpm = upvp.mean(axis=2)
-                    TKE_rms = 0.5 * (upupm + vpvpm)
-                    # save the results
-                    avg_file = os.path.join(analysis_path, 'AVG.dat')
-                    header = '"x", "y", "u_avg", "v_avg", "vorticity_avg", "upup_avg", "vpvp_avg", "upvp_avg", "TKE_rms"'
-                    tools.save( x, y, filename=avg_file, variables=[um, vm, vorm, upupm, vpvpm, upvpm, TKE_rms], header=header )
 
-                    header = '"x", "y", "u", "v", "mask", "vorticity", "velocity magnitude", "up", "vp", "upvp", "TKE"'
-                    for n, bn in enumerate(basename):
-                        fname = os.path.join(analysis_path, bn)
-                        tools.save( x, y, filename=fname, variables=[u[:,:,n], v[:,:,n], mask[:,:,n], vor[:,:,n], velMag[:,:,n], up[:,:,n], vp[:,:,n], upvp[:,:,n], TKE[:,:,n]], header=header )
+                # initialize variables to hold data
+                im_file, *_ = glob.glob(os.path.join(data_dir, self.exp['patA']))
+                image = tools.imread(im_file)
+                x, y = pyprocess.get_coordinates(image.shape, int(self.pro['ws']), int(self.pro['ol']))
+                # do field manipulation and scaling on x and y
+                if self.pos['fm_st'] == 'True':
+                    for fm in self.pos['fm_in'].split(','):
+                        x, y, *_ = tools.manipulate_field(x, y, x, x, x, mode=fm.strip())
+                scale = float(self.pro['sc'])
+                x, y = x/scale, y/scale
+                u, v, mask, vor, velMag = np.zeros((5, x.shape[0], x.shape[1], int(self.exp['nf'])), np.float)
+                basename = np.zeros((int(self.exp['nf']),), 'U50')
+                # extract data
+                for n, D in enumerate(data):
+                    basename[n], u[:,:,n], v[:,:,n], mask[:,:,n], vor[:,:,n], velMag[:,:,n] = D
+                del(data)
+                
+                # save results
+                postprocessing.saveResults([x, y, basename, u, v, mask, vor, velMag], self.pos, analysis_path, self.save_type)
                 
         return True
 
@@ -837,52 +831,16 @@ def mainPIVProcess( args, bga, bgb, pro, pos, processed_files):
         window_size=int(pro['ws']), overlap=int(pro['ol']), dt=float(pro['ts']), search_area_size=int(pro['sa']), sig2noise_method=pro['s2n'])
     x, y = pyprocess.get_coordinates( image_size=frame_a.shape, window_size=int(pro['ws']), overlap=int(pro['ol']) )
     save_path = tools.create_path(file_a, folders=['Analysis', 'Unvalidated'])
-    tools.save(x, y, u, v, sig2noise, save_path)
-    #post processing
-    #validation
-    mask = np.zeros(u.shape, dtype=bool)
-    if pos['s2n_st'] == 'True':
-        mask1 = validation.sig2noise_val( u, v, sig2noise, threshold = float(pos['s2n_ra']) )
-        mask = mask | mask1
-    if pos['gv_st'] == 'True':
-        umin, umax = map(float, pos['gv_ul'].split(','))
-        vmin, vmax = map(float, pos['gv_vl'].split(','))
-        mask2 = validation.global_val( u, v, (umin, umax), (vmin, vmax) )
-        mask = mask | mask2
-    if pos['lv_st'] == 'True':
-        udif, vdif = map(float, pos['lv_df'].split(','))
-        mask3 = validation.local_median_val(u, v, udif, vdif, size=int(pos['lv_kr']))
-        mask = mask | mask3
-    if pos['std_st'] == 'True':
-        mask4 = validation.global_std(u, v, std_threshold=float(pos['std_ra']))
-        mask = mask | mask4
-    # vector corrections
-    if pos['bv_st'] == 'True':
-        u[mask], v[mask] = np.nan, np.nan
-        u, v = filters.replace_outliers( u, v, method=pos['bv_mt'], max_iter=int(pos['bv_ni']), kernel_size=int(pos['bv_kr']))
-    if pos['sm_st'] == 'True':
-        u_ra, v_ra = map(float, pos['sm_ra'].split(','))
-        u, *_ = smoothn.smoothn(u, s=u_ra)
-        v, *_ = smoothn.smoothn(v, s=v_ra)
-    if pos['fm_st'] == 'True':
-        for fm in pos['fm_in'].split(','):
-            x, y, u, v, mask = tools.manipulate_field(x, y, u, v, mask, mode=fm.strip())
-    # scaling
-    scale = float(pro['sc'])
-    x, y, u, v = scaling.uniform(x, y, u, v, scaling_factor = scale)
-    # calculate vorticity and velocity magnitude
-    vor = postprocessing.vorticity(u, v, x, y)
-    velMag = np.sqrt(u*u + v*v)
-    # update processed files, then save or return values
+    tools.save(x, y, u, v, sig2noise, save_path+'.dat')
+    #post-processing
+    basename, u, v, mask, vor, velMag = postprocessing.postProcess(save_path, pro, pos, data=[x, y, u, v, sig2noise])
+    # update processed files
     processed_files.append(save_path)
-    if pos['out_m'] == 'simple':
-        header = '"x", "y", "u", "v", "mask", "vorticity", "velocity magnitude"'
-        fname = tools.create_path(file_a)
-        tools.save(x, y, filename=fname, variables=[u, v, mask, vor, velMag], header=header)
-    else:
-        basename = os.path.basename(save_path)
-        return basename, u, v, mask, vor, velMag
 
+    return basename, u, v, mask, vor, velMag
+
+
+# main function required to run the gui from cmd: python -m openpivtk
 def main():
     app = QtWidgets.QApplication(sys.argv)
     # app.setStyle('Fusion')

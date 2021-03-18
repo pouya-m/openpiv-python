@@ -23,28 +23,24 @@ import numpy.lib.stride_tricks
 import numpy as np
 from numpy.fft import rfft2, irfft2
 from numpy import ma
-from scipy.signal import convolve2d
+from scipy import signal
 from numpy import log
 
 
 
 def get_coordinates(image_size, window_size, overlap):
-    """Compute the x, y coordinates of the centers of the interrogation windows.
+    """Compute the x, y coordinates of the interrogation window centers.
 
     Parameters
     ----------
     image_size: two elements tuple
-        a two dimensional tuple for the pixel size of the image
-        first element is number of rows, second element is
-        the number of columns.
+        a two dimensional tuple for the size of the image in pixels (rows, columns)
 
     window_size: int
-        the size of the interrogation windows.
+        the size of the interrogation windows
 
     overlap: int
-        the number of pixel by which two adjacent interrogation
-        windows overlap.
-
+        the number of pixel that two adjacent interrogation windows overlap
 
     Returns
     -------
@@ -55,7 +51,6 @@ def get_coordinates(image_size, window_size, overlap):
     y : 2d np.ndarray
         a two dimensional array containing the y coordinates of the
         interrogation window centers, in pixels.
-
     """
 
     # get shape of the resulting flow field
@@ -209,7 +204,7 @@ def find_second_peak(corr, i=None, j=None, width=2):
     return i, j, corr_max2
 
 
-def find_subpixel_peak_position(corr, subpixel_method='gaussian'):
+def find_subpixel_peak_position(corr, subpixel_method='gaussian', window_correction='none', correction_mask=None):
     """
     Find subpixel approximation of the correlation peak.
 
@@ -235,48 +230,52 @@ def find_subpixel_peak_position(corr, subpixel_method='gaussian'):
         the fractional row and column indices for the sub-pixel
         approximation of the correlation peak.
     """
-
-    # initialization
-    # default_peak_position = (np.floor(corr.shape[0] / 2.), np.floor(corr.shape[1] / 2.))
-    default_peak_position = (0,0)
-
     
-    # the peak locations
+    # the peak location
     peak1_i, peak1_j, dummy = find_first_peak(corr)
-    
+
+    # check if peak is on boundary
+    if (peak1_i == 0 or peak1_i == (corr.shape[0]-1)) or (peak1_j == 0 or peak1_j == (corr.shape[1]-1)):
+        return peak1_i, peak1_j
+
+    # correction for window area
+    if window_correction == 'after_peak_detection':
+        corr_c = corr/correction_mask
+        corr_s = corr_c[peak1_i-1:peak1_i+2, peak1_j-1:peak1_j+2]
+        ind = corr_s.argmax()
+        peak1_i = (ind // corr_s.shape[1]) + (peak1_i - 1)
+        peak1_j = (ind % corr_s.shape[1]) + (peak1_j - 1)
+    else:
+        corr_c = corr
+
+    # the peak and its neighbours: left, right, down, up
+    c = corr_c[peak1_i,   peak1_j]
+    cl = corr_c[peak1_i - 1, peak1_j]
+    cr = corr_c[peak1_i + 1, peak1_j]
+    cd = corr_c[peak1_i,   peak1_j - 1]
+    cu = corr_c[peak1_i,   peak1_j + 1]
+
+    # gaussian fit
+    if np.any(np.array([c, cl, cr, cd, cu]) < 0) and subpixel_method == 'gaussian':
+        subpixel_method = 'centroid'
 
     try:
-        # the peak and its neighbours: left, right, down, up
-        c = corr[peak1_i,   peak1_j]
-        cl = corr[peak1_i - 1, peak1_j]
-        cr = corr[peak1_i + 1, peak1_j]
-        cd = corr[peak1_i,   peak1_j - 1]
-        cu = corr[peak1_i,   peak1_j + 1]
+        if subpixel_method == 'centroid':
+            subp_peak_position = (((peak1_i - 1) * cl + peak1_i * c + (peak1_i + 1) * cr) / (cl + c + cr),
+                                    ((peak1_j - 1) * cd + peak1_j * c + (peak1_j + 1) * cu) / (cd + c + cu))
 
-        # gaussian fit
-        if np.any(np.array([c, cl, cr, cd, cu]) < 0) and subpixel_method == 'gaussian':
-            subpixel_method = 'centroid'
+        elif subpixel_method == 'gaussian':
+            subp_peak_position = (peak1_i + ((log(cl) - log(cr)) / (2 * log(cl) - 4 * log(c) + 2 * log(cr))),
+                                    peak1_j + ((log(cd) - log(cu)) / (2 * log(cd) - 4 * log(c) + 2 * log(cu))))
 
-        try:
-            if subpixel_method == 'centroid':
-                subp_peak_position = (((peak1_i - 1) * cl + peak1_i * c + (peak1_i + 1) * cr) / (cl + c + cr),
-                                      ((peak1_j - 1) * cd + peak1_j * c + (peak1_j + 1) * cu) / (cd + c + cu))
+        elif subpixel_method == 'parabolic':
+            subp_peak_position = (peak1_i + (cl - cr) / (2 * cl - 4 * c + 2 * cr),
+                                    peak1_j + (cd - cu) / (2 * cd - 4 * c + 2 * cu))
 
-            elif subpixel_method == 'gaussian':
-                subp_peak_position = (peak1_i + ((log(cl) - log(cr)) / (2 * log(cl) - 4 * log(c) + 2 * log(cr))),
-                                      peak1_j + ((log(cd) - log(cu)) / (2 * log(cd) - 4 * log(c) + 2 * log(cu))))
-
-            elif subpixel_method == 'parabolic':
-                subp_peak_position = (peak1_i + (cl - cr) / (2 * cl - 4 * c + 2 * cr),
-                                      peak1_j + (cd - cu) / (2 * cd - 4 * c + 2 * cu))
-
-        except:
-            subp_peak_position = default_peak_position
-
-    except IndexError:
-        subp_peak_position = default_peak_position
+    except:
+        subp_peak_position = (peak1_i, peak1_j)
         
-    return subp_peak_position[0] - default_peak_position[0], subp_peak_position[1] - default_peak_position[1]
+    return subp_peak_position
 
 
 def sig2noise_ratio(corr, sig2noise_method='peak2peak', width=2):
@@ -394,11 +393,11 @@ def correlate_windows(window_a, window_b, corr_method='fft', nfftx=0, nffty=0):
         f2a = rfft2(normalize_intensity(window_a), s=(nfftx, nffty))
         f2b = rfft2(normalize_intensity(window_b), s=(nfftx, nffty))
         corr = irfft2(f2a * f2b).real
-        corr = corr[:window_a.shape[0] + window_b.shape[0], 
-                    :window_b.shape[1] + window_a.shape[1]]
+        corr = corr[:window_a.shape[0] + window_b.shape[0]-1, 
+                    :window_b.shape[1] + window_a.shape[1]-1]
         return corr
     elif corr_method == 'direct':
-        return convolve2d(normalize_intensity(window_a),
+        return signal.convolve2d(normalize_intensity(window_a),
         normalize_intensity(window_b[::-1, ::-1]), 'full')
     else:
         raise ValueError('method is not implemented')
@@ -431,7 +430,10 @@ def extended_search_area_piv(
         subpixel_method='gaussian', 
         sig2noise_method=None,
         width=2, 
-        nfftx=0, nffty=0, max_dis=0.25):
+        nfftx=0, nffty=0,
+        max_dis=0.25,
+        window_correction='none',
+        intensity_weighting='none', weighting_par=None):
     """Standard PIV cross-correlation algorithm, with an option for 
     extended area search that increased dynamic range. The search region
     in the second frame is larger than the interrogation window size in the 
@@ -501,6 +503,11 @@ def extended_search_area_piv(
         better values then the velocity and signal2noise ratios are replaced with those 
         correspoding to the second peak otherwise they are set to zero.
 
+    window_correction : string
+        option to normalize the correlation map to compensate for the finite size of 
+        interogation windows. This reduces the mean bias error and increases accuracy.
+        options are: 'none', 'before_peak_detection' and 'after_peak_detection'
+
     Returns
     -------
     u : 2d np.ndarray
@@ -518,7 +525,6 @@ def extended_search_area_piv(
     """
     
     # check the inputs for validity
-    
     if search_area_size == 0:
         search_area_size = window_size
     
@@ -527,110 +533,71 @@ def extended_search_area_piv(
     
     if search_area_size < window_size:
         raise ValueError('Search size cannot be smaller than the window_size')
-    
         
     if (window_size > frame_a.shape[0]) or (window_size > frame_a.shape[1]):
         raise ValueError('window size cannot be larger than the image')
         
     # get field shape
-    n_rows, n_cols = get_field_shape((frame_a.shape[0], frame_a.shape[1]), 
-                                     window_size, overlap )
-
+    n_rows, n_cols = get_field_shape((frame_a.shape[0], frame_a.shape[1]), window_size, overlap )
     u, v = np.zeros((n_rows, n_cols)), np.zeros((n_rows, n_cols))
     
-        # if we want sig2noise information, allocate memory
+    # if we want sig2noise information, allocate memory
     if sig2noise_method is not None:
         sig2noise = np.zeros((n_rows, n_cols))
+
+    # find spot masks and window corrections
+    Wa, Wb = find_weighting_mask(window_size, search_area_size, weighting=intensity_weighting, s=weighting_par)
+    if window_correction != 'none':
+        correction_mask = find_correction_mask(Wa, Wb, norm=False)
+    else:
+        correction_mask = None
     
-    # loop over the interrogation windows
-    # i, j are the row, column indices of the center of each interrogation
-    # window
-    #(Pouya) Let's do some padding on frame_b we will use it later...
+    # loop over the interrogation windows (k, m are the row, column indices of each interrogation window center)
+    # Let's do some padding on frame_b we will use it later...
     pad = (search_area_size - window_size) // 2
     frame_b_padded = np.pad(frame_b, (pad,), mode='constant', constant_values=0)
     
     for k in range(n_rows):
-        # range(range(search_area_size/2, frame_a.shape[0] - search_area_size/2, window_size - overlap ):
         for m in range(n_cols):
-            # range(search_area_size/2, frame_a.shape[1] - search_area_size/2 , window_size - overlap ):
 
-            '''
-            (Pouya) this part of the code is completely changed since the implementation of the 
-            extended search area was coded incorrectly
-            # Select first the largest window, work like usual from the top left corner
-            # the left edge goes as: 
-            # e.g. 0, (search_area_size - overlap), 2*(search_area_size - overlap),....
-            
-            il = k*(search_area_size - overlap)
-            ir = il + search_area_size
-            
-            # same for top-bottom
-            jt = m*(search_area_size - overlap)
-            jb = jt + search_area_size
-            
-            # pick up the window in the second image
-            window_b = frame_b[il:ir, jt:jb]            
-            
-            # now shift the left corner of the smaller window inside the larger one
-            il += (search_area_size - window_size)//2
-            # and it's right side is just a window_size apart
-            ir = il + window_size
-            # same same
-            jt += (search_area_size - window_size)//2
-            jb =  jt + window_size
-
-            window_a = frame_a[il:ir, jt:jb]
-            '''
-            #(pouya) First the smaller window (window_a) is selected
+            # this part of the code is completely changed since the previous implementation was wrong 
+            # First the smaller window (window_a) is selected
             top = k*(window_size - overlap)
             left = m*(window_size - overlap)
-            window_a = frame_a[top : top + window_size, left : left + window_size]
+            window_a = frame_a[top : top + window_size, left : left + window_size]*Wa
 
-            # (Pouya) Now the larger search area (window_b) is selected
             # we need to pad around frame_b with zeros to fill the outside edges so that the larger search area is available
-            # this padding also has the effect of moving the effective top and left edges of each window_b to the top and
-            # left respectively. so the old top and left values for frame_a can be reused without change here as the new top 
-            # and left values for frame_b. and we already padded frame_b outside the loop so:
-            window_b = frame_b_padded[top : top+search_area_size, left : left+search_area_size]
+            # which also moves the effective top and left edges. so the old top and left values for frame_a can be reused 
+            # without change for frame_b. and we already padded frame_b so:
+            window_b = frame_b_padded[top : top+search_area_size, left : left+search_area_size]*Wb
 
             if np.any(window_a):
-                corr = correlate_windows(window_a, window_b,
-                                         corr_method=corr_method, 
-                                         nfftx=nfftx, nffty=nffty)
-                #plt.figure()
-                #plt.contourf(corr)
-                #plt.show()
+                corr = correlate_windows(window_a, window_b, corr_method=corr_method, nfftx=nfftx, nffty=nffty)
+               
                 # get subpixel approximation for peak position row and column index
-                row, col = find_subpixel_peak_position(corr, 
-                                                        subpixel_method=subpixel_method)
-                
-                #(Pouya) changed for better accuracy in case odd values for search_area or window_size are entered
-                #row -= (search_area_size + window_size - 1)//2
-                #col -= (search_area_size + window_size - 1)//2
-                row -= (search_area_size + window_size)//2 - 1
-                col -= (search_area_size + window_size)//2 - 1
+                if window_correction == 'before_peak_detection':
+                    corr = corr/correction_mask
+                row, col = find_subpixel_peak_position(corr, subpixel_method=subpixel_method,
+                                window_correction=window_correction, correction_mask=correction_mask)
     
                 # get displacements, apply coordinate system definition
+                row -= (search_area_size + window_size - 1)/2.0
+                col -= (search_area_size + window_size - 1)/2.0
                 u[k,m],v[k,m] = -col, row 
                 
                 # get signal to noise ratio
                 if sig2noise_method is not None:
-                    sig2noise[k,m] = sig2noise_ratio(
-                        corr, sig2noise_method=sig2noise_method, width=width)
+                    sig2noise[k,m] = sig2noise_ratio(corr, sig2noise_method=sig2noise_method, width=width)
                 
-                #(Pouya) added code to check maximum displacement and try secondary peak
-                # check maximum displacemnt and try to recover better data if displacement is too high
+                # check maximum displacement and try the second correlation peak if displacement is too large
                 maxD = max_dis*window_size
                 if (abs(u[k,m]) > maxD) or (abs(v[k,m]) > maxD):
-                    row, col, s2n = find_secondary_displacement(corr, subpixel_method=subpixel_method,sig2noise_method=sig2noise_method, width=width)
-                    row -= (search_area_size + window_size)//2 - 1
-                    col -= (search_area_size + window_size)//2 - 1
-                    u[k,m],v[k,m] = -col, row
-                    sig2noise[k,m] = s2n
+                    u[k,m],v[k,m], sig2noise[k,m] = find_secondary_velocity(corr, window_size, search_area_size,
+                                                        subpixel_method=subpixel_method,sig2noise_method=sig2noise_method, width=width)
+
                     if (abs(u[k,m]) > maxD) or (abs(v[k,m]) > maxD):
-                        u[k,m], v[k,m] = 0, 0
-                        sig2noise[k,m] = 0
-     
+                        u[k,m], v[k,m], sig2noise[k,m] = 0, 0, 0
+
     # return output depending if user wanted sig2noise information
     if sig2noise_method is not None:
         return u/dt, v/dt, sig2noise
@@ -645,8 +612,8 @@ def nextpower2(i):
     return n
 
 
-# (Pouya) added function
-def find_secondary_displacement(corr, subpixel_method='gaussian',sig2noise_method=None, width=2):
+def find_secondary_velocity(corr, window_size, search_area_size, subpixel_method='gaussian',
+                sig2noise_method=None, width=2, window_correction='none', correction_mask=None):
     """finds displacement using the second correlation peak
     
     Parameters
@@ -688,10 +655,61 @@ def find_secondary_displacement(corr, subpixel_method='gaussian',sig2noise_metho
     jfin = min(j + width + 1, corr.shape[1])
     tmp[iini:ifin, jini:jfin] = ma.masked
     # use the masked array to find the secondary displacement and sig2noise ratio
-    row, col = find_subpixel_peak_position(tmp, subpixel_method=subpixel_method)
+    row, col = find_subpixel_peak_position(tmp, subpixel_method=subpixel_method, window_correction=window_correction, correction_mask=correction_mask)
+    row -= (search_area_size + window_size - 1)/2.0
+    col -= (search_area_size + window_size - 1)/2.0
+    u, v = -col, row
     if sig2noise_method is not None:
         s2n = sig2noise_ratio(tmp, sig2noise_method=sig2noise_method, width=width)
-        #s2n = -1
-        return row, col, s2n
+        return u, v, s2n
     else:
-        return row, col
+        return u, v, None
+
+
+def find_correction_mask(Wa, Wb, norm=False):
+    """finds the window correction mask used to normalize the correlation map (reduces mean bias error)
+    
+    Parameters
+    -----------
+    Wa, Wb: 2d np.ndarray
+        the window weight array used for window_a and window_b respectively
+
+    norm: bool
+        defaults to False, if True the weights are normalized
+    
+    Returns
+    --------
+    correction mask: 2d np.ndarray
+        the correction mask
+    """
+
+    correction_mask = signal.convolve2d(Wa, Wb)
+    if norm is True:
+        return correction_mask/correction_mask.max()
+    else:
+        return correction_mask
+
+
+def find_weighting_mask(window_a, window_b, weighting='none', s=None):
+    """calculates the appropriate intensity weighting for intergation windows
+    """
+    def gkern(size, std):
+        gkern1d = signal.gaussian(size, std=std).reshape(size, 1)
+        gkern2d = np.outer(gkern1d, gkern1d)
+        return gkern2d
+    
+    if weighting == 'none':
+        Wa = np.ones((window_a,window_a), np.float)
+        Wb = np.ones((window_b,window_b), np.float)
+
+    elif weighting == 'gaussian':
+        Wa = gkern(window_a, s)
+        Wb = gkern(window_b, s)
+
+    elif weighting == 'tophat':
+        Wa = np.ones((window_a - 2*s, window_a - 2*s), np.float)
+        Wa = np.pad(Wa, (s,), mode='constant', constant_values=0)
+        Wb = np.ones((window_b - 2*s, window_b - 2*s), np.float)
+        Wb = np.pad(Wb, (s,), mode='constant', constant_values=0)
+
+    return Wa, Wb
