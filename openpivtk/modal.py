@@ -13,7 +13,7 @@
 # 4- Added specific frequency field extraction using short-time fft which also shows variations over time
 
 # to do:
-# 1 - make the 'spectral pod analysis' and 'frequency fields extraction' functions available in GUI.
+# 1 - make the 'spectral pod analysis' and 'frequency fields extraction' functions available in GUI. -> done.
 # 2 - the reconstruction stage does not add the average flow to the results. thus the reconstructed fields are actually flow
 #     fluctuations (up, vp) not the flow field (u, v)
 
@@ -120,7 +120,7 @@ class ModalAnalysis():
         return u, w, a, p
     
 
-    def spectralpod(self, nperseg, noverlap, fs, flim=1, windowing=True, fdim=1):
+    def spectralpod(self, nperseg, noverlap, fs, flim=1, windowing='hamming', fdim=1):
         """performs a compelete spectral pod analysis and returns spectral modes
         and eignvalues
 
@@ -133,9 +133,9 @@ class ModalAnalysis():
             data aquisition frequency and the maximum frequency (higher frequencies 
             will not be calculated, will be discarded)
 
-        windowing : bool, optional
-            if true a hamming window will be used before fft calculation to minimize 
-            bleeding on the edges. 
+        windowing : str, optional
+            a string passed to scipy.signal.get_window to get the windowing function
+            used to reduce the bleeding effect in short-time fft. 
 
         fdim : float, optional
             a dimention factor to convert Hz to Strouhal (Diameter/Velocity)
@@ -156,10 +156,8 @@ class ModalAnalysis():
         Nf = len(freq)
         Nflim = sum(freq<flim)
         Xfk = np.zeros((self.M, Nb, Nf), float)
-        if windowing == True:
-            window = self.hammwin(nperseg)
-        else:
-            window = np.ones((nperseg,), float)
+        # window = self.hammwin(nperseg)
+        window = signal.get_window(windowing, nperseg)
         weight = 1/np.mean(window)
         print('looping over blocks and calculating fft...')
         for nb in range(Nb):
@@ -212,12 +210,12 @@ class ModalAnalysis():
         return Ar
 
 
-    def extractFreqField(self, fd, fs, nperseg=None, noverlap=None, windowing='hamming', fdim=1, method='stft'):
+    def extractFreqField(self, fd, fs, nperseg=None, noverlap=None, windowing='hamming', fdim=1, method='STFT'):
         """limits the frequency content in the flow field such that the remaining field varies only
          at the desired frequencies given by fd (it can be a single frequency or multiple frequencies).
          this uses either stft or fft methods to either keep time dependency or provide an averaged result"""
 
-        if method == 'stft':
+        if method == 'STFT':
             f, t, Af = signal.stft(self.A, fs=fs, window=windowing, nperseg=nperseg, noverlap=noverlap, \
                 return_onesided=True, padded=False, axis=1)
             f = f*fdim
@@ -227,7 +225,7 @@ class ModalAnalysis():
                 Afd[:,ind,:] = Af[:,ind,:]
             tr, Ar = signal.istft(Afd, fs=fs, window=windowing, nperseg=nperseg, noverlap=noverlap, input_onesided=True)
 
-        elif method == 'fft':
+        elif method == 'FFT':
             Af = np.fft.rfft(self.A, axis=1)
             f = np.fft.rfftfreq(self.A.shape[1], 1.0/fs)*fdim
             Afd = np.zeros(Af.shape, Af.dtype)
@@ -421,7 +419,6 @@ class ModalAnalysis():
     def loadSettings(stg_file):
         settings = ConfigParser()
         settings.read(stg_file)
-        
         return settings['Experiment'], settings['Analysis'], settings['Reconstruction']
 
 
@@ -431,42 +428,56 @@ if __name__ == "__main__":
 
     #code to run spatial pod analysis with setting file
 
-    # t1 = time.time()
-    # stg_file = r'E:\Temp\Re11_medium\Modal_Settings.dat'
-    # exp, analysis, rec = OrderedDict(), OrderedDict(), OrderedDict()
-    # exp, analysis, rec = ModalAnalysis.loadSettings(stg_file)
-    # for experiment in exp['exp'].split(','):
-    #     for run in exp['run'].split(','):
-    #         experiment = experiment.strip()
-    #         run = run.strip()
-    #         path = os.path.join(exp['dir'], experiment, run, 'Analysis')
-    #         print(f'modal analysis: {experiment}\{run}')
-    #         print('reading data...')
-    #         modal = ModalAnalysis(path, nfiles=int(exp['nf']), pattern=exp['pat'])
-    #         if analysis['st'] == 'True':
-    #             if analysis['mt'] == 'Singular Value Decomposition':
-    #                 print('runing SVD...')
-    #                 modal.svd(nmode=int(analysis['nm']))
-    #             elif analysis['mt'] == 'Snapshots Method':
-    #                 print('runing snapshot method...')
-    #                 modal.snapshot(nmode=int(analysis['nm']))
-    #         if reconst['st'] == 'True':
-    #             print('recontructing flow field...')
-    #             modal.reconstructField(nmode=int(reconst['nm']), nsp=int(reconst['ns']))
+    t1 = time.time()
+    stg_file = r'E:\Temp\Re11_medium\Modal_Settings.ini'
+    exp, analysis, rec = OrderedDict(), OrderedDict(), OrderedDict()
+    exp, analysis, rec = ModalAnalysis.loadSettings(stg_file)
+    experiments = glob.glob(os.path.join(exp['dir'], exp['exp']))
+    for experiment in experiments:
+        runs = glob.glob(os.path.join(experiment, exp['run']))
+        for run in runs:
+            path = os.path.join(run, 'Analysis')
+            print(f'modal analysis: {run}')
+            modal = ModalAnalysis(path, nfiles=int(exp['nf']), pattern=exp['pat'])
+
+            if analysis['mt'] == 'Singular Value Decomposition':
+                if analysis['st'] == 'True':
+                    print('runing SVD...')
+                    modal.svd(nmode=int(analysis['nm']))
+                if rec['st'] == 'True':
+                    print('reconstructing flow field...')
+                    modal.reconstructField(nmode=int(rec['nm']), nsp=int(rec['ns']))
+            elif analysis['mt'] == 'Snapshots Method':
+                if analysis['st'] == 'True':
+                    print('runing snapshots method...')
+                    modal.snapshot(nmode=int(analysis['nm']))
+                if rec['st'] == 'True':
+                    print('reconstructing flow field...')
+                    modal.reconstructField(nmode=int(rec['nm']), nsp=int(rec['ns']))
+            elif analysis['mt'] == 'Spectral POD':
+                if analysis['sst'] == 'True':
+                    print('runing SPOD ...')
+                    modal.spectralpod(nperseg=int(analysis['nps']), noverlap=int(analysis['nol']), fs=float(analysis['fs']),
+                        flim=float(analysis['flim']), windowing=analysis['win'], fdim=float(analysis['fdim']))
+                if rec['st'] == 'True':
+                    print('extracting frequency fields...')
+                    fd = []
+                    for f in rec['fd'].split(','):
+                        fd.append(float(f))
+                    modal.extractFreqField(fd, fs=float(analysis['fs']), nperseg=int(analysis['nps']), noverlap=int(analysis['nol']),
+                        windowing=analysis['win'], fdim=float(analysis['fdim']), method=rec['mt'])
     
-    # t = time.time() - t1
-    # print(f'Modal Analysis finished in: {t} sec')
+
+
+    t = time.time() - t1
+    print(f'Modal Analysis finished in: {t} sec')
 
     # spectral POD run
-    import time
-    t1 = time.time()
-    path = r'G:\Re11_medium\theta000deg\Analysis'
-    modal = ModalAnalysis(path, 500, '*.h5')
-    modal.spectralpod(nperseg=128, noverlap=108, fs=14.5, flim=0.6, windowing=False, fdim=0.27166)
-    print(f'done in {time.time()-t1} sec')
-
-    # Ar = modal.extractSingleFreqAvg(0.138, 14.5, fdim=0.27166)
-
+    # import time
+    # t1 = time.time()
+    # path = r'G:\Re11_medium\theta000deg\Analysis'
+    # modal = ModalAnalysis(path, 500, '*.h5')
+    # modal.spectralpod(nperseg=128, noverlap=108, fs=14.5, flim=0.6, windowing=False, fdim=0.27166)
     # Ar = modal.extractFreqField(fd=[0.185,0.21], fs=14.5, nperseg=128, noverlap=108, fdim=0.26737, method='fft')
-    # print(time.time()-t1)
+    # print(f'done in {time.time()-t1} sec')
 

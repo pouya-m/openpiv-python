@@ -1,12 +1,12 @@
 # Particle Image Velocimetry GUI
 # By Pouya Mohtat Nov. 2020
 
-# Version 0.2.7 change log:
-# - spectral analysis tab now active
-# - new version format: 0.7 -> 0.2.7
-# - the experiment folder addressing is changed and patterns are used instead of single folder names, making the folder addresses more flexible.
-# - setting files changed to .ini format for simpler save and load functions
-# - 'import raw images' dialogue is removed all together. the same functionality can be achieved using the process tab and then importing unvalidated files.
+# Version 0.2.9 change log:
+# - Spectral POD analysis added to the modal analysis tab
+# - frequency field extraction for specific frequencies
+# - hdf5 file support added to increase I/O speed significantly (still in beta)
+# - small bug fixes and improvements
+
 
 
 # to do:
@@ -53,7 +53,7 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
         self.setupUi(self)
 
         #self.showMaximized()
-        self.version = '0.2.8'
+        self.version = '0.2.9'
         self.setWindowTitle(f'PIV Analysis Toolkit V{self.version}')
         self.resize(1280, 800)
         self.show()
@@ -453,9 +453,19 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
         self.mdl_st_CB.setChecked(eval(analysis['st']))
         self.mdl_method_CB.setCurrentText(analysis['mt'])
         self.mdl_nm_LE.setText(analysis['nm'])
+        self.mdl_spod_st_CB.setChecked(eval(analysis['sst']))
+        self.mdl_spod_nperseg_LE.setText(analysis['nps'])
+        self.mdl_spod_ol_LE.setText(analysis['nol'])
+        self.mdl_spod_win_LE.setText(analysis['win'])
+        self.mdl_spod_fs_LE.setText(analysis['fs'])
+        self.mdl_spod_fdim_LE.setText(analysis['fdim'])
+        self.mdl_spod_flim_LE.setText(analysis['flim'])
         self.mdl_rec_CB.setChecked(eval(rec['st']))
         self.mdl_rec_nm_LE.setText(rec['nm'])
         self.mdl_rec_ns_LE.setText(rec['ns'])
+        self.mdl_ffield_st_CB.setChecked(eval(rec['sst']))
+        self.mdl_ffield_mt_CB.setCurrentText(rec['mt'])
+        self.mdl_ffield_fd_LE.setText(rec['fd'])
 
     def mdlSaveSettings(self, path=False):
         #getting the file path
@@ -474,9 +484,19 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
         analysis['st'] = str(self.mdl_st_CB.isChecked())
         analysis['mt'] = self.mdl_method_CB.currentText()
         analysis['nm'] = self.mdl_nm_LE.text()
+        analysis['sst'] = str(self.mdl_spod_st_CB.isChecked())
+        analysis['nps'] = self.mdl_spod_nperseg_LE.text()
+        analysis['nol'] = self.mdl_spod_ol_LE.text()
+        analysis['fs'] = self.mdl_spod_fs_LE.text()
+        analysis['flim'] = self.mdl_spod_flim_LE.text()
+        analysis['fdim'] = self.mdl_spod_fdim_LE.text()
+        analysis['win'] = self.mdl_spod_win_LE.text()
         rec['st'] = str(self.mdl_rec_CB.isChecked())
         rec['nm'] = self.mdl_rec_nm_LE.text()
         rec['ns'] = self.mdl_rec_ns_LE.text()
+        rec['sst'] = str(self.mdl_ffield_st_CB.isChecked())
+        rec['fd'] = self.mdl_ffield_fd_LE.text()
+        rec['mt'] = self.mdl_ffield_mt_CB.currentText()
         #saving to file
         modal.ModalAnalysis.saveSettings(exp, analysis, rec, path)
 
@@ -511,14 +531,10 @@ class MainPIV(Main_PIV.Ui_MainWindow, QtWidgets.QMainWindow):
     
     def mdlUpdateAnalysis(self):
         opt = self.mdl_method_CB.currentText()
-        if opt == 'Singular Value Decomposition':
-            print('1')
-        elif opt == 'Snapshots Method':
-            print('2')
-        elif opt == '32':
-            print('2')
-        elif opt == '43':
-            print('2')
+        if (opt == 'Singular Value Decomposition') or (opt == 'Snapshots Method'):
+            self.mdl_analysis_SW.setCurrentIndex(0)
+        elif opt == 'Spectral POD':
+            self.mdl_analysis_SW.setCurrentIndex(1)
 
     def freqLoadFrom(self):
         self.freq_dir_LE.setText(self.exp_directory_LE.text())
@@ -720,18 +736,37 @@ class ModalProcessThread(QThread):
             runs.sort()
             for run in runs:
                 path = os.path.join(run, 'Analysis')
-                self.progresstext_sig.emit(f'modal analysis: {run}')
+                self.progresstext_sig.emit(f'modal analysis: {run}\nreading data...')
                 modal_analysis = modal.ModalAnalysis(path, nfiles=int(self.exp['nf']), pattern=self.exp['pat'])
-                if self.analysis['st'] == 'True':
-                    if self.analysis['mt'] == 'Singular Value Decomposition':
+
+
+                if self.analysis['mt'] == 'Singular Value Decomposition':
+                    if self.analysis['st'] == 'True':
                         self.progresstext_sig.emit('runing SVD...')
                         modal_analysis.svd(nmode=int(self.analysis['nm']))
-                    elif self.analysis['mt'] == 'Snapshots Method':
+                    if self.rec['st'] == 'True':
+                        self.progresstext_sig.emit('recontructing flow field...')
+                        modal_analysis.reconstructField(nmode=int(self.rec['nm']), nsp=int(self.rec['ns']))
+                elif self.analysis['mt'] == 'Snapshots Method':
+                    if self.analysis['st'] == 'True':
                         self.progresstext_sig.emit('runing snapshots method...')
                         modal_analysis.snapshot(nmode=int(self.analysis['nm']))
-                if self.rec['st'] == 'True':
-                    self.progresstext_sig.emit('recontructing flow field...')
-                    modal_analysis.reconstructField(nmode=int(self.rec['nm']), nsp=int(self.rec['ns']))
+                    if self.rec['st'] == 'True':
+                        self.progresstext_sig.emit('recontructing flow field...')
+                        modal_analysis.reconstructField(nmode=int(self.rec['nm']), nsp=int(self.rec['ns']))
+                elif self.analysis['mt'] == 'Spectral POD':
+                    if self.analysis['sst'] == 'True':
+                        self.progresstext_sig.emit('runing SPOD ...')
+                        modal_analysis.spectralpod(nperseg=int(self.analysis['nps']), noverlap=int(self.analysis['nol']), fs=float(self.analysis['fs']),
+                            flim=float(self.analysis['flim']), windowing=self.analysis['win'], fdim=float(self.analysis['fdim']))
+                    if self.rec['st'] == 'True':
+                        self.progresstext_sig.emit('extracting frequency fields...')
+                        fd = []
+                        for f in self.rec['fd'].split(','):
+                            fd.append(float(f))
+                        modal_analysis.extractFreqField(fd, fs=float(self.analysis['fs']), nperseg=int(self.analysis['nps']), noverlap=int(self.analysis['nol']),
+                            windowing=self.analysis['win'], fdim=float(self.analysis['fdim']), method=self.rec['mt'])
+
                 self.progress += 1
                 self.progressbar_sig.emit(self.progress)
 

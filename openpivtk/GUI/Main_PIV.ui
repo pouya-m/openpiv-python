@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>836</width>
-    <height>736</height>
+    <width>1013</width>
+    <height>793</height>
    </rect>
   </property>
   <property name="styleSheet">
@@ -64,7 +64,7 @@
        <enum>QTabWidget::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>3</number>
       </property>
       <property name="elideMode">
        <enum>Qt::ElideNone</enum>
@@ -752,8 +752,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>394</width>
-                <height>106</height>
+                <width>975</width>
+                <height>307</height>
                </rect>
               </property>
               <attribute name="label">
@@ -889,8 +889,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>316</width>
-                <height>75</height>
+                <width>420</width>
+                <height>91</height>
                </rect>
               </property>
               <attribute name="label">
@@ -968,8 +968,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>473</width>
-                <height>78</height>
+                <width>599</width>
+                <height>93</height>
                </rect>
               </property>
               <attribute name="label">
@@ -1133,8 +1133,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>439</width>
-                <height>246</height>
+                <width>560</width>
+                <height>288</height>
                </rect>
               </property>
               <attribute name="label">
@@ -1956,6 +1956,280 @@
         <string>Modal Analysis</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_15">
+        <item row="1" column="0" colspan="4">
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <item alignment="Qt::AlignVCenter">
+           <widget class="QGroupBox" name="modal_ana_GB">
+            <property name="title">
+             <string>Analysis</string>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_17">
+             <item row="0" column="0" colspan="2">
+              <widget class="QLabel" name="label_5">
+               <property name="text">
+                <string>Method</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="3">
+              <spacer name="horizontalSpacer_5">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>662</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item row="1" column="0" rowspan="2" colspan="4">
+              <widget class="QStackedWidget" name="mdl_analysis_SW">
+               <property name="enabled">
+                <bool>true</bool>
+               </property>
+               <property name="currentIndex">
+                <number>0</number>
+               </property>
+               <widget class="QWidget" name="page0">
+                <layout class="QGridLayout" name="gridLayout_19">
+                 <item row="0" column="1">
+                  <spacer name="horizontalSpacer_7">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>84</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item row="0" column="2">
+                  <widget class="QLabel" name="label_18">
+                   <property name="text">
+                    <string>Num. of Modes </string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="0">
+                  <widget class="QCheckBox" name="mdl_rec_CB">
+                   <property name="text">
+                    <string>Field Reconstruction</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="3">
+                  <widget class="QLineEdit" name="mdl_rec_nm_LE">
+                   <property name="placeholderText">
+                    <string>Number of modes to use for reconstruction</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="3">
+                  <widget class="QLineEdit" name="mdl_nm_LE">
+                   <property name="placeholderText">
+                    <string>Number of modes to save</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="5">
+                  <widget class="QLineEdit" name="mdl_rec_ns_LE">
+                   <property name="placeholderText">
+                    <string>Number of snapshot to reconstruct</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="4">
+                  <widget class="QLabel" name="label_20">
+                   <property name="text">
+                    <string>Num. of Snapshots</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="2">
+                  <widget class="QLabel" name="label_19">
+                   <property name="text">
+                    <string>Num. of Modes</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="4" colspan="2">
+                  <spacer name="horizontalSpacer_6">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>390</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item row="1" column="1">
+                  <spacer name="horizontalSpacer_8">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>84</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item row="0" column="0">
+                  <widget class="QCheckBox" name="mdl_st_CB">
+                   <property name="text">
+                    <string>Modal Analysis</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+               <widget class="QWidget" name="page1">
+                <layout class="QGridLayout" name="gridLayout_33">
+                 <item row="0" column="0">
+                  <widget class="QCheckBox" name="mdl_spod_st_CB">
+                   <property name="text">
+                    <string>Run SPOD</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="0">
+                  <widget class="QLabel" name="label_42">
+                   <property name="text">
+                    <string>Data per Segment</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="1">
+                  <widget class="QLineEdit" name="mdl_spod_nperseg_LE"/>
+                 </item>
+                 <item row="1" column="2" colspan="2">
+                  <widget class="QLabel" name="label_43">
+                   <property name="text">
+                    <string>Overlap</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="4">
+                  <widget class="QLineEdit" name="mdl_spod_ol_LE"/>
+                 </item>
+                 <item row="1" column="5">
+                  <widget class="QLabel" name="label_44">
+                   <property name="text">
+                    <string>Windowing</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="6">
+                  <widget class="QLineEdit" name="mdl_spod_win_LE"/>
+                 </item>
+                 <item row="2" column="0">
+                  <widget class="QLabel" name="label_45">
+                   <property name="text">
+                    <string>Acquisition Freq.</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="1">
+                  <widget class="QLineEdit" name="mdl_spod_fs_LE"/>
+                 </item>
+                 <item row="2" column="2" colspan="2">
+                  <widget class="QLabel" name="label_46">
+                   <property name="text">
+                    <string>Dimension Factor</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="4">
+                  <widget class="QLineEdit" name="mdl_spod_fdim_LE"/>
+                 </item>
+                 <item row="2" column="5">
+                  <widget class="QLabel" name="label_47">
+                   <property name="text">
+                    <string>Frequency Limit</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="6">
+                  <widget class="QLineEdit" name="mdl_spod_flim_LE"/>
+                 </item>
+                 <item row="3" column="0" colspan="2">
+                  <widget class="QCheckBox" name="mdl_ffield_st_CB">
+                   <property name="text">
+                    <string>Extract Frequency Fields</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="3" column="2">
+                  <widget class="QLabel" name="label_49">
+                   <property name="text">
+                    <string>Method    </string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="3" column="5">
+                  <widget class="QLabel" name="label_48">
+                   <property name="text">
+                    <string>Frequencies</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="3" column="6">
+                  <widget class="QLineEdit" name="mdl_ffield_fd_LE">
+                   <property name="text">
+                    <string/>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="3" column="4">
+                  <widget class="QComboBox" name="mdl_ffield_mt_CB">
+                   <item>
+                    <property name="text">
+                     <string>STFT</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>FFT</string>
+                    </property>
+                   </item>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </widget>
+             </item>
+             <item row="0" column="2">
+              <widget class="QComboBox" name="mdl_method_CB">
+               <item>
+                <property name="text">
+                 <string>Singular Value Decomposition</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Snapshots Method</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Spectral POD</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </item>
         <item row="2" column="0">
          <spacer name="horizontalSpacer_3">
           <property name="orientation">
@@ -1976,104 +2250,12 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="0" colspan="4">
-         <layout class="QHBoxLayout" name="horizontalLayout_2">
-          <item>
-           <widget class="QGroupBox" name="modal_ana_GB">
-            <property name="title">
-             <string>Analysis</string>
-            </property>
-            <layout class="QGridLayout" name="gridLayout_19">
-             <item row="2" column="1">
-              <widget class="QLineEdit" name="mdl_nm_LE">
-               <property name="placeholderText">
-                <string>Number of modes to save</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="label_5">
-               <property name="text">
-                <string>Method</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="1">
-              <widget class="QComboBox" name="mdl_method_CB">
-               <item>
-                <property name="text">
-                 <string>Singular Value Decomposition</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Snapshots Method</string>
-                </property>
-               </item>
-              </widget>
-             </item>
-             <item row="2" column="0">
-              <widget class="QLabel" name="label_18">
-               <property name="text">
-                <string>Num. of Modes</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="0">
-              <widget class="QCheckBox" name="mdl_st_CB">
-               <property name="text">
-                <string>Run Modal Analysis</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </widget>
-          </item>
-          <item>
-           <widget class="QGroupBox" name="modal_rec_GB">
-            <property name="title">
-             <string>Reconstruction</string>
-            </property>
-            <layout class="QGridLayout" name="gridLayout_17">
-             <item row="0" column="0" colspan="3">
-              <widget class="QCheckBox" name="mdl_rec_CB">
-               <property name="text">
-                <string>Perform Field Reconstruction</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="label_19">
-               <property name="text">
-                <string>Num. of Modes</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="0" colspan="2">
-              <widget class="QLabel" name="label_20">
-               <property name="text">
-                <string>Num. of Snapshots</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="2">
-              <widget class="QLineEdit" name="mdl_rec_ns_LE">
-               <property name="placeholderText">
-                <string>Number of snapshot to reconstruct</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="2">
-              <widget class="QLineEdit" name="mdl_rec_nm_LE">
-               <property name="placeholderText">
-                <string>Number of modes to use for reconstruction</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </widget>
-          </item>
-         </layout>
+        <item row="2" column="1">
+         <widget class="QPushButton" name="mdl_load_PB">
+          <property name="text">
+           <string>Load Settings</string>
+          </property>
+         </widget>
         </item>
         <item row="3" column="0" colspan="4">
          <widget class="QGroupBox" name="modal_run_GB">
@@ -2298,13 +2480,6 @@
           </layout>
          </widget>
         </item>
-        <item row="2" column="1">
-         <widget class="QPushButton" name="mdl_load_PB">
-          <property name="text">
-           <string>Load Settings</string>
-          </property>
-         </widget>
-        </item>
        </layout>
       </widget>
      </widget>
@@ -2316,8 +2491,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>836</width>
-     <height>21</height>
+     <width>1013</width>
+     <height>31</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
