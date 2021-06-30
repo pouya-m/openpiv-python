@@ -702,7 +702,7 @@ def save_h5(fname, data, variables, mode='1D', grp_names=None, naming='auto'):
         N = data.shape[0]//M
         for t in range(data.shape[2]):
             if naming == 'auto':
-                grp = hf.create_group(f'time{t:04}', track_order=True)
+                grp = hf.create_group(f'time{(t+1):04}', track_order=True)
             else:
                 grp = hf.create_group(grp_names[t], track_order=True)
             for i, v in enumerate(variables):
@@ -713,7 +713,7 @@ def save_h5(fname, data, variables, mode='1D', grp_names=None, naming='auto'):
                 data[i] = data[i][...,np.newaxis]
         for t in range(data[0].shape[2]):
             if naming == 'auto':
-                grp = hf.create_group(f'time{t:04}', track_order=True)
+                grp = hf.create_group(f'time{(t+1):04}', track_order=True)
             else:
                 grp = hf.create_group(grp_names[t], track_order=True)
             for i, v in enumerate(variables):

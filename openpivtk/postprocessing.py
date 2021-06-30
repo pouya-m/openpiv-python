@@ -272,6 +272,16 @@ def loadSettings(file_name):
     settings.read(file_name)
     
     return settings['Experiment'], settings['Pre-process'], settings['Process'], settings['Post-process']
+
+
+def convert2h5(path, patt, variables, fname):
+    file_list = glob.glob(os.path.join(path, patt))
+    file_list.sort()
+    temp = np.loadtxt(file_list[0], skiprows=1)
+    data = np.zeros((temp.shape[0],temp.shape[1],len(file_list)), temp.dtype)
+    for i, f in enumerate(file_list):
+        data[:,:,i] = np.loadtxt(f, skiprows=1)
+    tools.save_h5(fname, data, variables, mode='1D')
     
 
 # code to test functions
@@ -314,7 +324,6 @@ if __name__ == "__main__":
     saveSettings(exp, pre, pro, pos, filename)
     exp2, pr2e, pro2, pos2 = loadSettings(filename)
     pprint.pprint(pos2)
-
     
     exp = ddict(lambda: '')
     pre = ddict(lambda: '')
@@ -324,6 +333,14 @@ if __name__ == "__main__":
     exp, pre, pro, pos = loadSettings(filename)
     pprint.pprint(exp)
     pprint.pprint(pos)
+
+    # test convertSaveType
+    import time
+    t1 = time.time()
+    path = r'G:\Re11_medium\theta180deg\Analysis'
+    variables = ['x', 'y', 'u', 'v', 'mask', 'vorticity', 'vel_mag', 'up', 'vp', 'upvp', 'TKE']
+    convert2h5(path, 'theta*.dat', variables, fname=os.path.join(path, 'data.h5'))
+    print(f'conversion took: {time.time()-t1:.2f} sec')
     '''
 
     # test output

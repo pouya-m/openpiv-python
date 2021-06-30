@@ -169,6 +169,8 @@ class ModalAnalysis():
         print('looping over frequencies and calculating SPOD')
         Lam = np.zeros((Nb,Nflim), float)
         Phi = np.zeros((self.M,Nb,Nflim), float)
+        # a = np.zeros((Nb,Nb,Nflim), float)
+
         for f in range(Nflim):
             Xf = np.squeeze(Xfk[:,:,f])
             Sf = np.matmul(Xf.T, Xf)/Nb
@@ -177,12 +179,13 @@ class ModalAnalysis():
             lam = np.diag(np.power(w, -1/2.0)/np.sqrt(Nb))
             Phi[:,:,f] = np.matmul(np.matmul(Xf,v), lam)
             Lam[:,f] = w
+            # a[:,:,f] = np.matmul(np.squeeze(Phi[:,:,f]).T, Xf)
+        # self.saveData(a=np.abs(a[0,:,:]).T)
         p = Lam*100/np.sum(Lam)
         freq = freq[0:Nflim]
         
         # save data
         self.saveData(spod=[Phi, Lam, freq, p])
-
         return Phi, Lam, freq, p
 
 
@@ -298,12 +301,12 @@ class ModalAnalysis():
         #check nsp and nmode
         if nsp == 'all':
             nsp = a.shape[1]
-        if nsp > a.shape[1]:
+        elif nsp > a.shape[1]:
             warnings.warn(f'number of snapshots to reconstruct cannot be larger than the original number of snapshots, nsp was set to its maximum possible value: {a.shape[1]}', Warning)
             nsp = a.shape[1]
         if nmode == 'all':
             nmode = a.shape[0]
-        if nmode > a.shape[0]:
+        elif nmode > a.shape[0]:
             warnings.warn(f'number of modes to use cannot be larger than the original number of modes, nmode was set to its maximum possible value: {a.shape[0]}', Warning)
             nmode = a.shape[0]
         # reconstruct the limited u from saved data
@@ -344,7 +347,7 @@ class ModalAnalysis():
         if w is not None:
             #saving w and p data
             wp = np.zeros((w.size,4))
-            wp[:,0], wp[:,1], wp[:,2], wp[:,3] = range(w.size), w, p, np.cumsum(p)
+            wp[:,0], wp[:,1], wp[:,2], wp[:,3] = range(1,w.size+1), w, p, np.cumsum(p)
             headerline = 'TITLE="eignvalues and energy distribution" VARIABLES="mode", "eignvalue", "energy percentage", "cumulative energy percentage"'
             np.savetxt(os.path.join(self.dir, 'Energy Distribution.dat'), wp, fmt='%8.6f', delimiter='\t', header=headerline, comments='')
 
@@ -423,11 +426,60 @@ class ModalAnalysis():
 
 
 
+def filt_POD(path, nfiles, pat, f_cf, fs, lfmodes, nmode):
+    """convenience function to apply a POD analysis which separates the 'low' and 'high' frequency data according to filter
+    cut off freq 'f_cf'. this helps the POD method to separate high frequency modes related to vortex shedding from those
+    with lower frequency showing slow drift or low frequency shedding modes.
+    """
+    modal = ModalAnalysis(path, nfiles, pat)
+
+    # calculate low freq modes
+    A_og = modal.A.copy()
+    dir_og = modal.dir
+    modal.dir = os.path.join(dir_og, 'filt_POD', 'low passed')
+    if os.path.isdir(os.path.join(dir_og, 'filt_POD')) == False:
+        os.mkdir(os.path.join(dir_og, 'filt_POD'))
+    if os.path.isdir(modal.dir) == False:
+        os.mkdir(modal.dir)
+    sos = signal.butter(10, f_cf, fs=fs, output='sos')
+    modal.A = signal.sosfiltfilt(sos, modal.A, axis=1)
+    u_lf, *_ = modal.svd(nmode)
+
+    # calculate the low freq modes projection 
+    u_lf = u_lf[:,lfmodes]
+    a_lf = np.matmul(u_lf.T, A_og)
+    A_lf = np.zeros(modal.A.shape, np.float)
+    for i in range(modal.A.shape[1]):
+        for j in range(u_lf.shape[1]):
+            A_lf[:,i] += a_lf[j,i] * u_lf[:,j]
+    
+    # calculate the high freq modes
+    A_hf = A_og - A_lf
+    u_hf, w_hf, *_ = np.linalg.svd(A_hf, full_matrices=False)
+    w_hf, u_hf, *_ = modal.sortEignvalues(w_hf**2, u_hf)
+    
+    #add low freq modes manually, and calculate coefficients and power
+    # (we calculate power using parseval's theorem)
+    u = np.zeros((u_hf.shape[0], u_hf.shape[1]+len(lfmodes)))
+    u[:,len(lfmodes):] = u_hf
+    u[:,0:len(lfmodes)] = u_lf
+    a = np.matmul(u.T, A_og)
+    a2 = a**2
+    p_tot = np.sum(a2)
+    p = np.sum(a2, axis=1)*100/(p_tot)
+
+    # save
+    modal.dir = os.path.join(dir_og, 'filt_POD')
+    if os.path.isdir(modal.dir) == False:
+        os.mkdir(modal.dir)
+    modal.saveData(u[:,0:nmode], p, p, a[0:nmode,:])
+
+
 
 if __name__ == "__main__":
 
     #code to run spatial pod analysis with setting file
-
+    '''
     t1 = time.time()
     stg_file = r'E:\Temp\Re11_medium\Modal_Settings.ini'
     exp, analysis, rec = OrderedDict(), OrderedDict(), OrderedDict()
@@ -459,7 +511,7 @@ if __name__ == "__main__":
                     print('runing SPOD ...')
                     modal.spectralpod(nperseg=int(analysis['nps']), noverlap=int(analysis['nol']), fs=float(analysis['fs']),
                         flim=float(analysis['flim']), windowing=analysis['win'], fdim=float(analysis['fdim']))
-                if rec['st'] == 'True':
+                if rec['sst'] == 'True':
                     print('extracting frequency fields...')
                     fd = []
                     for f in rec['fd'].split(','):
@@ -467,10 +519,10 @@ if __name__ == "__main__":
                     modal.extractFreqField(fd, fs=float(analysis['fs']), nperseg=int(analysis['nps']), noverlap=int(analysis['nol']),
                         windowing=analysis['win'], fdim=float(analysis['fdim']), method=rec['mt'])
     
-
-
     t = time.time() - t1
     print(f'Modal Analysis finished in: {t} sec')
+    '''
+
 
     # spectral POD run
     # import time
@@ -480,4 +532,19 @@ if __name__ == "__main__":
     # modal.spectralpod(nperseg=128, noverlap=108, fs=14.5, flim=0.6, windowing=False, fdim=0.27166)
     # Ar = modal.extractFreqField(fd=[0.185,0.21], fs=14.5, nperseg=128, noverlap=108, fdim=0.26737, method='fft')
     # print(f'done in {time.time()-t1} sec')
+
+
+    # filtering data
+    # path = r'G:\Re11_medium\theta048deg\Analysis'
+    # modal = ModalAnalysis(path, 1000, '*.h5')
+    # sos = signal.butter(10, 0.32, fs=14.5, output='sos')
+    # modal.A = signal.sosfiltfilt(sos, modal.A, axis=1)
+    # modal.svd(nmode=20)
+
+    # apply pod to low and high freq separately
+    path = r'G:\Re11_medium\theta048deg\Analysis'
+    nfiles = 1000
+    pat = '*.h5'
+    filt_POD(path, nfiles, pat, f_cf=0.4, fs=14.5, lfmodes=[0], nmode=20)
+
 

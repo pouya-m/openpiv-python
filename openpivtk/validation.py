@@ -111,8 +111,8 @@ def global_std( u, v, std_threshold = 3 ):
         
     """
     
-    vel_magnitude = u**2 + v**2
-    ind = vel_magnitude > std_threshold*np.std(vel_magnitude)
+    ind = np.logical_or( (np.abs(u - np.mean(u)) > std_threshold * np.std(u)),
+                         (np.abs(v - np.mean(v)) > std_threshold * np.std(v)) )
     
     #u[ind] = np.nan
     #v[ind] = np.nan

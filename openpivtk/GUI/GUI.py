@@ -759,7 +759,7 @@ class ModalProcessThread(QThread):
                         self.progresstext_sig.emit('runing SPOD ...')
                         modal_analysis.spectralpod(nperseg=int(self.analysis['nps']), noverlap=int(self.analysis['nol']), fs=float(self.analysis['fs']),
                             flim=float(self.analysis['flim']), windowing=self.analysis['win'], fdim=float(self.analysis['fdim']))
-                    if self.rec['st'] == 'True':
+                    if self.rec['sst'] == 'True':
                         self.progresstext_sig.emit('extracting frequency fields...')
                         fd = []
                         for f in self.rec['fd'].split(','):
